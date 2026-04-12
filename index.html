@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Hyrox &amp; Running Plan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: #0a0a0f; color: #e8e8f0; font-family: -apple-system, "Helvetica Neue", sans-serif; }
+textarea { outline: none; }
+button { outline: none; -webkit-tap-highlight-color: transparent; }
+::-webkit-scrollbar { width: 4px; } 
+::-webkit-scrollbar-track { background: #0a0a0f; }
+::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const hyroxStations = [
+  { order: 1, name: "SkiErg", distance: "1,000m", weight: "Bodyweight", detail: "No weight — pure aerobic output on the ski erg machine. 1,000m as fast as you can sustain.", tip: "Pace yourself here. Most people blow up on the ski erg and pay for it at the sled push.", color: "#60a5fa" },
+  { order: 2, name: "Sled Push", distance: "50m", weight: "152kg total", detail: "Sled (~102kg) + 50kg plates added. Pushed 50m at low hip position. No rest until complete.", tip: "Low hips, short powerful steps, drive through the balls of your feet. Standing upright kills your power.", color: "#f97316" },
+  { order: 3, name: "Sled Pull", distance: "50m", weight: "103kg total", detail: "Sled (~103kg) pulled by rope 50m. Hand-over-hand rope pull — no plates added in Men's Open.", tip: "Maintain constant rope tension with a hand-over-hand rhythm. Short, controlled pulls beat lunging grabs.", color: "#f97316" },
+  { order: 4, name: "Burpee Broad Jump", distance: "80m", weight: "Bodyweight", detail: "Chest to floor burpee then max broad jump forward. Approximately 30–40 reps depending on jump distance.", tip: "Find a rhythm — don't sprint. Blowing up here destroys the back half. A metronome pace beats bursts of speed.", color: "#4ade80" },
+  { order: 5, name: "Rowing", distance: "1,000m", weight: "Bodyweight", detail: "Concept2 rower, 1,000m. Second big cardio station after the sled work. Legs are already cooked.", tip: "Target 2:00–2:10/500m split. Drive through the legs first, then lean back — don't just pull with your arms.", color: "#60a5fa" },
+  { order: 6, name: "Farmers Carry", distance: "200m", weight: "2 × 24kg (48kg total)", detail: "Two 24kg kettlebells carried 200m — typically 8 laps of 25m. Cannot put them down during each lap.", tip: "Grip is the limiting factor. Pack your shoulders, keep the bells close to your body. Chalk up if allowed.", color: "#facc15" },
+  { order: 7, name: "Sandbag Lunges", distance: "100m", weight: "20kg sandbag", detail: "20kg sandbag held on shoulders or across chest, alternating forward lunges for 100m. Quads will be torched.", tip: "Short, controlled steps. Don't rush. Your legs are already destroyed — composure beats speed here.", color: "#a78bfa" },
+  { order: 8, name: "Wall Balls", reps: "100 reps", weight: "9kg medicine ball", detail: "100 wall balls at 9kg to a 10ft (3m) target. The final station. You finish right after the last rep.", tip: "Break into sets of 20–25 with 5 sec rest. Never go unbroken and blow up. Breathe at the catch, drive on the squat.", color: "#f43f5e" },
+];
+
+const phases = [
+  {
+    id: 1, name: "Phase 1", subtitle: "Base Building", weeks: "Weeks 1–4", color: "#4ade80", accent: "#16a34a",
+    description: "Build aerobic base, introduce functional movements, re-establish running form. Keep intensity low.",
+    hyrox: [
+      { day: "Monday", label: "Functional Strength", focus: "Lower body + core", blocks: [
+        { title: "Warm-up", details: ["5 min row or ski erg easy pace"] },
+        { title: "Strength Circuit (3 rounds)", details: ["10× goblet squat (moderate)", "10× Romanian deadlift", "12× walking lunges (each leg)", "30 sec plank hold"] },
+        { title: "Finisher", details: ["3× 200m row — rest 60 sec between"] },
+      ]},
+      { day: "Tuesday", label: "Upper Body + Carry", focus: "Pull, push, carry", blocks: [
+        { title: "Warm-up", details: ["3 min ski erg easy"] },
+        { title: "Strength (4 rounds)", details: ["8× pull-ups or lat pulldown", "10× dumbbell shoulder press", "12× dumbbell row (each side)", "20m farmer carry (moderate weight)"] },
+        { title: "Core", details: ["3× 20 dead bugs", "3× 15 hollow body rocks"] },
+      ]},
+      { day: "Thursday", label: "Hyrox Sim Intro", focus: "Station exposure", blocks: [
+        { title: "Circuit (2 rounds, rest 2 min between)", details: ["200m ski erg", "10× burpee broad jump", "20× wall ball (6–9kg)", "200m sled push (light)", "20× box jumps"] },
+        { title: "Cool-down", details: ["5 min easy walk + stretch"] },
+      ]},
+      { day: "Saturday", label: "Mixed Endurance", focus: "Aerobic capacity", blocks: [
+        { title: "20 min AMRAP (easy pace)", details: ["250m row", "15× kettlebell swings", "15× goblet squat"] },
+        { title: "Core Finisher", details: ["3× 30 sec side plank each side"] },
+      ]},
+    ],
+    running: [
+      { day: "Wednesday", label: "Easy Run", details: ["20–25 min easy conversational pace (~7:30–8:00/km)", "Focus on breathing and form — not speed", "Aim for 3–4km total"] },
+      { day: "Friday", label: "Walk/Run Intervals", details: ["5 min warm-up walk", "Repeat 8×: [2 min run / 1 min walk]", "Target run pace: ~7:00–7:30/km", "Total: ~35 min"] },
+      { day: "Sunday", label: "Long Slow Run", details: ["30–35 min continuous, very easy pace (~7:30–8:00/km)", "4–5km total", "No pressure on pace — just time on feet"] },
+    ],
+  },
+  {
+    id: 2, name: "Phase 2", subtitle: "Build & Introduce Intensity", weeks: "Weeks 5–10", color: "#facc15", accent: "#ca8a04",
+    description: "Increase load and volume. Start race-pace running intervals. Add sled work and carries.",
+    hyrox: [
+      { day: "Monday", label: "Strength Foundation", focus: "Legs + posterior chain", blocks: [
+        { title: "Warm-up", details: ["5 min ski erg moderate"] },
+        { title: "Strength (4 rounds)", details: ["8× barbell back squat", "8× Romanian deadlift", "12× reverse lunge (each leg)", "20m sandbag carry"] },
+        { title: "Conditioning", details: ["4× 250m row — target strong pace, rest 90 sec"] },
+      ]},
+      { day: "Tuesday", label: "Upper + Hyrox Skill", focus: "Push/pull + wall balls", blocks: [
+        { title: "Strength (4 rounds)", details: ["8× weighted pull-ups or chest-to-bar", "10× push press", "12× dumbbell row", "30 sec ring/bar hang"] },
+        { title: "Skill Work", details: ["4× 15 wall ball @9kg — rest 90 sec", "2× 10 burpee broad jump — focus form"] },
+      ]},
+      { day: "Thursday", label: "Hyrox Simulation", focus: "Race-style circuit", blocks: [
+        { title: "Circuit (3 rounds, 2 min rest)", details: ["500m row (~2:10–2:20 pace)", "15× wall ball @9kg", "25m sled push (moderate load)", "25m sled pull", "15× burpee broad jump"] },
+        { title: "Note", details: ["Track total time. Aim to maintain consistency across rounds."] },
+      ]},
+      { day: "Saturday", label: "Functional Endurance", focus: "Sustained output", blocks: [
+        { title: "30 min AMRAP (moderate pace)", details: ["500m ski erg", "20× kettlebell swings @24kg", "20× goblet squat @24kg", "20m farmer carry"] },
+        { title: "Core", details: ["3× 15 GHD sit-ups or weighted crunches"] },
+      ]},
+    ],
+    running: [
+      { day: "Wednesday", label: "Tempo Run", details: ["10 min easy warm-up jog", "15 min at target race pace (6:00–6:30/km)", "5 min cool-down jog", "Total: 4–5km"] },
+      { day: "Friday", label: "Interval Run", details: ["Warm-up: 5 min easy jog", "6× 400m at 5:30–5:45/km pace", "Rest: 90 sec walk between reps", "Cool-down: 5 min easy jog"] },
+      { day: "Sunday", label: "Long Run", details: ["45–50 min at easy pace (~7:00–7:30/km)", "6–7km total", "Focus: keeping pace consistent throughout"] },
+    ],
+  },
+  {
+    id: 3, name: "Phase 3", subtitle: "Race Specificity", weeks: "Weeks 11–18", color: "#f97316", accent: "#c2410c",
+    description: "Simulate race conditions. Longer runs at target pace. Full Hyrox mock races. Build mental toughness.",
+    hyrox: [
+      { day: "Monday", label: "Heavy Strength", focus: "Compound lifts", blocks: [
+        { title: "Strength (5 rounds)", details: ["5× back squat (heavy)", "5× deadlift (heavy)", "8× weighted step-ups (each leg)"] },
+        { title: "Accessories", details: ["3× 15 single-leg press", "3× 12 Nordic curl or hamstring curl"] },
+      ]},
+      { day: "Tuesday", label: "Upper Power + Carries", focus: "Overhead + farmer", blocks: [
+        { title: "Strength (4 rounds)", details: ["6× strict press", "8× weighted pull-ups", "6× hang power clean"] },
+        { title: "Hyrox Carry Work", details: ["4× 50m farmer carry (2×24kg — race weight)", "4× 20m sandbag lunges (20kg — race weight)"] },
+      ]},
+      { day: "Thursday", label: "Full Hyrox Mock", focus: "Race simulation", blocks: [
+        { title: "Full Simulation (race order)", details: ["1km run → 1,000m ski erg", "1km run → 50m sled push (152kg)", "1km run → 50m sled pull (103kg)", "1km run → 80m burpee broad jump", "1km run → 1,000m row", "1km run → 200m farmers carry (2×24kg)", "1km run → 100m sandbag lunges (20kg)", "1km run → 100× wall ball (9kg)"] },
+        { title: "Note", details: ["Scale loads in early phase. Hit race weights from week 14+.", "Track total time each mock — this is your benchmark."] },
+      ]},
+      { day: "Saturday", label: "Recovery Conditioning", focus: "Zone 2 + technique", blocks: [
+        { title: "20 min easy bike or row", details: ["Zone 2 only — conversational pace"] },
+        { title: "Movement Quality", details: ["Wall ball technique drills (catch position, squat depth)", "Sled push position work (hip height)", "Ski erg breathing practice"] },
+      ]},
+    ],
+    running: [
+      { day: "Wednesday", label: "Race Pace Run", details: ["2km easy warm-up", "4km at exact target pace (6:00–6:15/km)", "1km cool-down", "Total: 7km — this is your race rehearsal"] },
+      { day: "Friday", label: "Speed Work", details: ["Warm-up: 10 min easy", "8× 200m at 5:00/km pace", "Rest: 60 sec between reps", "Cool-down: 10 min easy jog"] },
+      { day: "Sunday", label: "Long Run", details: ["60–70 min at easy-to-moderate pace (~6:30–7:00/km)", "8–9km total", "Last 2km: push to race pace to simulate finishing strong"] },
+    ],
+  },
+  {
+    id: 4, name: "Phase 4", subtitle: "Peak & Taper", weeks: "Weeks 19–24", color: "#f43f5e", accent: "#be123c",
+    description: "Reduce volume, maintain intensity. Rest is training. Race week: trust the work.",
+    hyrox: [
+      { day: "Monday", label: "Moderate Strength", focus: "Maintain, don't build", blocks: [
+        { title: "Strength (3 rounds — reduced volume)", details: ["6× back squat (75% max)", "6× deadlift (75% max)", "10× step-ups"] },
+      ]},
+      { day: "Tuesday", label: "Upper + Quick Sim", focus: "Sharp, not fatiguing", blocks: [
+        { title: "Strength (3 rounds)", details: ["6× pull-ups", "8× push press", "8× dumbbell row"] },
+        { title: "Quick Hyrox Drill", details: ["2 rounds: 15 wall ball @9kg + 15 burpee broad jump + 200m row — rest 3 min between"] },
+      ]},
+      { day: "Thursday", label: "Short Race Sim", focus: "Stay sharp, stay fresh", blocks: [
+        { title: "Half Hyrox (first 4 stations only)", details: ["1km run → 1,000m ski erg", "1km run → 50m sled push", "1km run → 50m sled pull", "1km run → 80m burpee broad jump"] },
+        { title: "Note", details: ["Race pace effort. Finish feeling like you have more in the tank."] },
+      ]},
+      { day: "Saturday", label: "Race Week — Stay Loose", focus: "Final week only", blocks: [
+        { title: "20 min easy movement only", details: ["Light row or ski erg", "Some wall balls to keep the pattern fresh", "Short easy jog"] },
+        { title: "Mindset", details: ["You have done the work. Trust it.", "Visualise your pacing and transitions."] },
+      ]},
+    ],
+    running: [
+      { day: "Wednesday", label: "Shorter Tempo", details: ["Warm-up: 1km easy", "3km at target race pace", "Cool-down: 1km easy", "Keep it sharp, not exhausting"] },
+      { day: "Friday", label: "Strides", details: ["Easy 15 min jog", "6× 100m strides at slightly faster than race pace", "Walk back recovery between each", "Stay fluid — movement, not training"] },
+      { day: "Sunday", label: "Race Week Rest", details: ["Final week: 20 min easy jog only", "No watch pressure, no pace target", "Just enjoy running — you're ready"] },
+    ],
+  },
+];
+
+const nutrition = {
+  days: [
+    { label: "Training Day", subtitle: "Gym or hard run", calories: 2400, protein: 155, carbs: 240, fat: 70, color: "#f97316",
+      timing: [
+        { time: "Pre-workout (1–2hr before)", items: ["40–50g carbs + 20–25g protein", "e.g. rice + chicken, oats + protein powder, banana + Greek yogurt"] },
+        { time: "Intra (optional, sessions >60 min)", items: ["20–30g fast carbs", "e.g. banana, sports drink, dates"] },
+        { time: "Post-workout (within 45 min)", items: ["35–40g protein + 50–60g carbs", "e.g. protein shake + rice, chicken rice, Greek yogurt + fruit + granola"] },
+        { time: "Remaining meals", items: ["Balance protein across 2–3 more meals", "Prioritise vegetables, fibre, whole foods"] },
+      ],
+    },
+    { label: "Rest Day", subtitle: "No training", calories: 1950, protein: 150, carbs: 150, fat: 72, color: "#60a5fa",
+      timing: [
+        { time: "Breakfast", items: ["30–35g protein + moderate carbs", "e.g. eggs + whole grain toast, Greek yogurt + oats"] },
+        { time: "Lunch", items: ["35–40g protein + vegetables + small carb serve", "e.g. grilled fish or chicken with salad and half cup rice"] },
+        { time: "Dinner", items: ["35–40g protein + vegetables + small carb serve", "e.g. lean meat + roasted veg + sweet potato"] },
+        { time: "Snack (if needed)", items: ["Protein-focused, low carb", "e.g. cottage cheese, boiled eggs, protein shake"] },
+      ],
+    },
+    { label: "Long Run Day", subtitle: "Sunday long run", calories: 2600, protein: 155, carbs: 270, fat: 72, color: "#4ade80",
+      timing: [
+        { time: "Pre-run (1.5hr before)", items: ["50–60g carbs, light protein", "e.g. banana + peanut butter toast, oats with honey"] },
+        { time: "During run (if >45 min)", items: ["Sip water every 15–20 min", "Optional energy gel at 40 min mark — Singapore heat demands this"] },
+        { time: "Recovery meal (within 1hr)", items: ["50g carbs + 35–40g protein", "e.g. chicken rice, pasta with lean meat, rice + eggs + veg"] },
+        { time: "Rest of day", items: ["Eat to satiety, whole foods", "Slightly higher carbs OK — you earned it"] },
+      ],
+    },
+  ],
+  foods: [
+    { category: "Protein", emoji: "🥩", items: ["Chicken breast (31g/100g)", "Canned tuna (25g/100g)", "Greek yogurt (10g/100g)", "Eggs (6g/egg)", "Protein powder (25g/scoop)", "Tofu firm (8g/100g)", "Salmon (25g/100g)"] },
+    { category: "Carbs", emoji: "🍚", items: ["White/brown rice (28g/100g cooked)", "Oats (27g/100g cooked)", "Sweet potato (20g/100g)", "Banana (23g each)", "Whole grain bread (15g/slice)", "Pasta (25g/100g cooked)"] },
+    { category: "Fats", emoji: "🥑", items: ["Avocado (15g fat/half)", "Olive oil (14g fat/tbsp)", "Peanut butter (8g fat/tbsp)", "Almonds (15g fat/30g)", "Eggs (5g fat/egg)"] },
+    { category: "Vegetables", emoji: "🥦", items: ["Broccoli, spinach, bok choy, cucumber", "Eat freely — low calorie, high fibre", "Great for satiety on a deficit"] },
+  ],
+  rules: [
+    { icon: "💧", title: "Hydration in Singapore heat", body: "2.5–3.5L water daily. Add electrolytes on long run and Hyrox sim days. Dehydration tanks performance more than any macro mistake." },
+    { icon: "⚖️", title: "Deficit only on rest days", body: "Training days: ~2,400 kcal to protect performance. Rest days: ~1,950 kcal. Same average deficit, but your sessions stay fuelled." },
+    { icon: "🍫", title: "The chocolate rule", body: "Dark chocolate (70%+) counts as a fat source. You're welcome." },
+    { icon: "🚫", title: "What to minimise", body: "Liquid calories (sugary drinks, alcohol), ultra-processed snacks, and skipping pre-workout meals. These quietly undo the deficit." },
+    { icon: "📉", title: "When to reassess", body: "If weight stalls 2+ weeks, drop 100–150 kcal from rest days only. Never cut training day fuel." },
+  ],
+};
+
+const tips = [
+  { icon: "🏃", title: "Running Form First", body: "Short quick steps, lean slightly forward, land mid-foot. Don't chase pace with bad form early on." },
+  { icon: "😴", title: "Sleep is a Workout", body: "Hyrox is heavy on your CNS. 7–8 hours is non-negotiable during high-volume weeks." },
+  { icon: "🥗", title: "Fuel the Work", body: "Don't undereat. You're adding 3 runs a week on top of gym. Protein and carbs around sessions matter." },
+  { icon: "📈", title: "Progressive Overload", body: "Add ~5% load or volume per week, then take a deload every 4th week. Don't rush phases." },
+  { icon: "🎯", title: "Hyrox Stations to Drill", body: "Sled push/pull and ski erg are where races are won or lost. Prioritise these from Month 2." },
+  { icon: "🧘", title: "Flexibility Days", body: "The 3 rest days matter. Light walk, swim, or yoga on one of them goes a long way over 6 months." },
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function formatDateKey(year, month, day) {
+  return `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+}
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAY_LABELS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+
+function HyroxPlan() {
+  const [activePhase, setActivePhase] = useState(0);
+  const [activeTab, setActiveTab] = useState("hyrox");
+  const [workoutLogs, setWorkoutLogs] = useState(() => { try { const s = localStorage.getItem("hyrox_logs"); return s ? JSON.parse(s) : {}; } catch(e) { return {}; } });
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [selectedCalDay, setSelectedCalDay] = useState(null);
+
+  // Persist logs to localStorage
+  const persistLogs = (logs) => {
+    try { localStorage.setItem("hyrox_logs", JSON.stringify(logs)); } catch(e) {}
+    return logs;
+  };
+
+  const phase = phases[activePhase];
+
+  const tabs = [
+    { id: "hyrox", label: "🏋️ Hyrox" },
+    { id: "running", label: "🏃 Running" },
+    { id: "stations", label: "📋 Stations" },
+    { id: "nutrition", label: "🥗 Nutrition" },
+    { id: "log", label: "📓 Log" },
+  ];
+
+  function logWorkout(entry) {
+    const key = todayKey();
+    setWorkoutLogs(prev => { const next = { ...prev, [key]: entry }; persistLogs(next); return next; });
+  }
+
+  function deleteLog(key) {
+    setWorkoutLogs(prev => {
+      const next = { ...prev };
+      delete next[key];
+      persistLogs(next);
+      return next;
+    });
+    setSelectedCalDay(null);
+  }
+
+  function editLog(key, updatedEntry) {
+    setWorkoutLogs(prev => { const next = { ...prev, [key]: updatedEntry }; persistLogs(next); return next; });
+  }
+
+  return (
+    <div style={{ fontFamily: "'DM Sans','Helvetica Neue',sans-serif", background: "#0a0a0f", color: "#e8e8f0", minHeight: "100vh" }}>
+
+      {/* HEADER */}
+      <div style={{ padding: "40px 24px 24px", borderBottom: "1px solid #1e1e2e", background: "linear-gradient(180deg,#0d0d1a 0%,#0a0a0f 100%)" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div style={{ display: "inline-block", background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 6, padding: "4px 12px", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>6-Month Program</div>
+          <h1 style={{ fontSize: "clamp(28px,5vw,42px)", fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+            <span style={{ color: "#fff" }}>Hyrox & Running</span><br />
+            <span style={{ background: `linear-gradient(90deg,${phase.color},${phase.accent})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Training Plan</span>
+          </h1>
+          <p style={{ color: "#666", fontSize: 14, margin: 0 }}>4 days/week gym · Target: 6–6:30/km for 8km · Hyrox race-ready by December</p>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px" }}>
+
+        {/* PHASE SELECTOR */}
+        <div style={{ padding: "24px 0 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {phases.map((p, i) => (
+            <button key={p.id} onClick={() => setActivePhase(i)} style={{ background: activePhase === i ? p.color : "#141420", color: activePhase === i ? "#000" : "#666", border: `1px solid ${activePhase === i ? p.color : "#2a2a3e"}`, borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+              {p.name} <span style={{ fontWeight: 400, fontSize: 11, opacity: 0.7 }}>{p.weeks}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* PHASE HEADER */}
+        <div style={{ marginTop: 16, padding: "20px", background: "#111118", border: `1px solid ${phase.color}33`, borderLeft: `3px solid ${phase.color}`, borderRadius: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: phase.color }}>{phase.name}: {phase.subtitle}</h2>
+          <div style={{ color: "#555", fontSize: 12, marginTop: 2 }}>{phase.weeks}</div>
+          <p style={{ margin: "12px 0 0", fontSize: 13, color: "#888", lineHeight: 1.6 }}>{phase.description}</p>
+        </div>
+
+        {/* TABS */}
+        <div style={{ display: "flex", gap: 6, marginTop: 20, flexWrap: "wrap" }}>
+          {tabs.map(tab => {
+            const activeColor = tab.id === "nutrition" ? "#a78bfa" : tab.id === "stations" ? "#f43f5e" : tab.id === "log" ? "#e879f9" : phase.color;
+            const isActive = activeTab === tab.id;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, minWidth: 60, padding: "11px 4px", background: isActive ? activeColor : "#111118", color: isActive ? "#000" : "#666", border: `1px solid ${isActive ? activeColor : "#2a2a3e"}`, borderRadius: 10, fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* TAB CONTENT */}
+        <div style={{ marginTop: 16, paddingBottom: 20 }}>
+
+          {/* HYROX */}
+          {activeTab === "hyrox" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {phase.hyrox.map((s, i) => (
+                <LoggableSessionCard key={i} session={s} color={phase.color} type="hyrox" phaseName={phase.name} onLog={logWorkout} />
+              ))}
+            </div>
+          )}
+
+          {/* RUNNING */}
+          {activeTab === "running" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {phase.running.map((s, i) => (
+                <LoggableRunCard key={i} session={s} color={phase.color} phaseName={phase.name} onLog={logWorkout} />
+              ))}
+              <div style={{ marginTop: 4, padding: "16px", background: "#0d1a0d", border: `1px solid ${phase.color}44`, borderRadius: 12 }}>
+                <div style={{ fontSize: 12, color: phase.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>🎯 Running Goal Progression</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[
+                    { p: "Weeks 1–4", pace: "~7:30/km", dist: "3–5km" },
+                    { p: "Weeks 5–10", pace: "~7:00/km", dist: "5–7km" },
+                    { p: "Weeks 11–18", pace: "~6:15–6:30/km", dist: "7–9km" },
+                    { p: "Weeks 19–24", pace: "6:00/km ✓", dist: "Race ready" },
+                  ].map((r, i) => (
+                    <div key={i} style={{ background: "#0a0a0f", borderRadius: 8, padding: "10px 12px", fontSize: 12 }}>
+                      <div style={{ color: "#555", marginBottom: 2 }}>{r.p}</div>
+                      <div style={{ color: phase.color, fontWeight: 700 }}>{r.pace}</div>
+                      <div style={{ color: "#666", fontSize: 11 }}>{r.dist}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STATIONS */}
+          {activeTab === "stations" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ padding: "14px 16px", background: "#1a0d0d", border: "1px solid #f43f5e44", borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#f43f5e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>🏁 Race Format — Men's Open</div>
+                <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.6 }}>8 × (1km run → 1 station) = 8km running + 8 stations</div>
+                <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>Total race distance: ~10km with functional work. Average finish time: 75–100 min.</div>
+              </div>
+              {hyroxStations.map(s => <StationCard key={s.order} station={s} />)}
+              <div style={{ padding: "14px 16px", background: "#0d0d1a", border: "1px solid #2a2a4a", borderRadius: 12, marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>⚡ Race Day Tips</div>
+                {["You push and pull your own numbered sled — know your lane before the race starts.","Drop your heart rate slightly in the last 200m before each station.","Wall balls: sets of 20–25 with 5 sec rest. Don't go unbroken and blow up on the last station.","Farmers carry and sandbag lunges are time to make up places — most people walk these."].map((tip, i) => (
+                  <div key={i} style={{ fontSize: 12, color: "#888", padding: "5px 0 5px 12px", borderLeft: "2px solid #2a2a4a", marginBottom: 4, lineHeight: 1.5 }}>{tip}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* NUTRITION */}
+          {activeTab === "nutrition" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ background: "#111118", border: "1px solid #2a2040", borderRadius: 12, padding: 20 }}>
+                <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>📊 Your Numbers (76kg, 178cm)</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+                  {[{ label: "Current weight", value: "76 kg" },{ label: "Target weight", value: "72–73 kg" },{ label: "TDEE (very active)", value: "~2,750 kcal" },{ label: "Avg daily deficit", value: "~400 kcal" }].map((item, i) => (
+                    <div key={i} style={{ background: "#0a0a0f", borderRadius: 8, padding: "10px 12px" }}>
+                      <div style={{ fontSize: 11, color: "#555", marginBottom: 3 }}>{item.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#e8e8f0" }}>{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: "#1a1025", border: "1px solid #3d2060", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#b29bd4", lineHeight: 1.6 }}>
+                  Strategy: eat near maintenance on training days to protect muscle and performance. Take the deficit on rest days. Averages ~400 kcal/day — enough for ~0.5kg/week without killing your workouts.
+                </div>
+              </div>
+              {nutrition.days.map((day, i) => <NutritionDayCard key={i} day={day} />)}
+              <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 20 }}>
+                <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>🛒 Macro-Friendly Foods</div>
+                {nutrition.foods.map((cat, i) => (
+                  <div key={i} style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#ccc", marginBottom: 6 }}>{cat.emoji} {cat.category}</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {cat.items.map((item, j) => (
+                        <span key={j} style={{ fontSize: 11, color: "#888", background: "#0d0d14", border: "1px solid #1e1e2e", borderRadius: 20, padding: "4px 10px" }}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Rules of the Kitchen</div>
+                {nutrition.rules.map((rule, i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, padding: "12px 14px", background: "#111118", border: "1px solid #1e1e2e", borderRadius: 10 }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{rule.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#ccc", marginBottom: 2 }}>{rule.title}</div>
+                      <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>{rule.body}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LOG TAB */}
+          {activeTab === "log" && (
+            <LogTab workoutLogs={workoutLogs} calMonth={calMonth} setCalMonth={setCalMonth} selectedCalDay={selectedCalDay} setSelectedCalDay={setSelectedCalDay} onDelete={deleteLog} onEdit={editLog} />
+          )}
+
+        </div>
+
+        {/* WEEKLY STRUCTURE */}
+        <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.08em" }}>📅 Weekly Structure</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {[{ day: "Monday", type: "Hyrox", color: phase.color },{ day: "Tuesday", type: "Hyrox", color: phase.color },{ day: "Wednesday", type: "Run", color: "#60a5fa" },{ day: "Thursday", type: "Hyrox", color: phase.color },{ day: "Friday", type: "Run", color: "#60a5fa" },{ day: "Saturday", type: "Hyrox", color: phase.color },{ day: "Sunday", type: "Run (long)", color: "#60a5fa" }].map((item, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#0a0a0f", borderRadius: 8 }}>
+                <span style={{ fontSize: 13, color: "#888" }}>{item.day}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: item.color, background: `${item.color}15`, padding: "3px 10px", borderRadius: 20 }}>{item.type}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* COACH'S NOTES */}
+        <div style={{ paddingBottom: 60 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>Coach's Notes</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {tips.map((tip, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, padding: "12px 14px", background: "#111118", border: "1px solid #1e1e2e", borderRadius: 10 }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{tip.icon}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#ccc", marginBottom: 2 }}>{tip.title}</div>
+                  <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>{tip.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ─── LOG TAB ──────────────────────────────────────────────────────────────────
+
+function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelectedCalDay, onDelete, onEdit }) {
+  const [editingKey, setEditingKey] = useState(null);
+  const [editNote, setEditNote] = useState("");
+  const [editChecked, setEditChecked] = useState({});
+  const [confirmDeleteKey, setConfirmDeleteKey] = useState(null);
+
+  const { year, month } = calMonth;
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = todayKey();
+  const totalLogs = Object.keys(workoutLogs).length;
+  const hyroxCount = Object.values(workoutLogs).filter(l => l.type === "hyrox").length;
+  const runCount = Object.values(workoutLogs).filter(l => l.type === "running").length;
+
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const selectedKey = selectedCalDay ? formatDateKey(year, month, selectedCalDay) : null;
+  const selectedLog = selectedKey ? workoutLogs[selectedKey] : null;
+
+  function startEdit(key, log) {
+    setEditingKey(key);
+    setEditNote(log.note || "");
+    const c = {};
+    log.items.forEach((item, i) => { c[i] = item.checked; });
+    setEditChecked(c);
+  }
+
+  function saveEdit(key, log) {
+    const updatedItems = log.items.map((item, i) => ({ ...item, checked: !!editChecked[i] }));
+    onEdit(key, { ...log, items: updatedItems, note: editNote });
+    setEditingKey(null);
+  }
+
+  function handleDelete(key) {
+    if (confirmDeleteKey === key) {
+      onDelete(key);
+      setConfirmDeleteKey(null);
+    } else {
+      setConfirmDeleteKey(key);
+      setTimeout(() => setConfirmDeleteKey(null), 3000);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+      {/* STATS STRIP */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {[
+          { label: "Total Sessions", value: totalLogs, color: "#e879f9" },
+          { label: "Hyrox", value: hyroxCount, color: "#4ade80" },
+          { label: "Runs", value: runCount, color: "#60a5fa" },
+        ].map((s, i) => (
+          <div key={i} style={{ background: "#111118", border: `1px solid ${s.color}33`, borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 10, color: "#555", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* CALENDAR */}
+      <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <button onClick={() => setCalMonth(prev => { const d = new Date(prev.year, prev.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 16 }}>‹</button>
+          <span style={{ fontWeight: 700, fontSize: 14, color: "#e8e8f0" }}>{MONTH_NAMES[month]} {year}</span>
+          <button onClick={() => setCalMonth(prev => { const d = new Date(prev.year, prev.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 16 }}>›</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 6 }}>
+          {DAY_LABELS.map(d => <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#555", fontWeight: 700, padding: "4px 0" }}>{d}</div>)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} />;
+            const key = formatDateKey(year, month, day);
+            const log = workoutLogs[key];
+            const isToday = key === today;
+            const isSelected = day === selectedCalDay;
+            const dotColor = log ? (log.type === "hyrox" ? "#4ade80" : "#60a5fa") : null;
+            return (
+              <button key={i} onClick={() => setSelectedCalDay(isSelected ? null : day)} style={{ background: isSelected ? "#2a2a3e" : "transparent", border: isToday ? "1px solid #e879f944" : "1px solid transparent", borderRadius: 8, padding: "6px 2px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? "#e879f9" : log ? "#e8e8f0" : "#555" }}>{day}</span>
+                {dotColor && <div style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor }} />}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 14, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80" }} /><span style={{ fontSize: 11, color: "#555" }}>Hyrox</span></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#60a5fa" }} /><span style={{ fontSize: 11, color: "#555" }}>Run</span></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#e879f944", border: "1px solid #e879f9" }} /><span style={{ fontSize: 11, color: "#555" }}>Today</span></div>
+        </div>
+      </div>
+
+      {/* SELECTED DAY LOG */}
+      {selectedCalDay && (
+        <div style={{ background: "#111118", border: `1px solid ${selectedLog ? (selectedLog.type === "hyrox" ? "#4ade8044" : "#60a5fa44") : "#1e1e2e"}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>
+            {MONTH_NAMES[month]} {selectedCalDay}, {year}
+          </div>
+          {selectedLog ? (
+            editingKey === selectedKey ? (
+              /* ── EDIT MODE ── */
+              <div>
+                <div style={{ fontSize: 12, color: "#888", fontWeight: 700, marginBottom: 10 }}>Editing — tap to toggle exercises</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 14 }}>
+                  {selectedLog.items.map((item, i) => {
+                    const isDone = !!editChecked[i];
+                    const typeColor = selectedLog.type === "hyrox" ? "#4ade80" : "#60a5fa";
+                    return (
+                      <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? typeColor + "11" : "transparent", border: "none", borderRadius: 8, padding: "7px 10px 7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left" }}>
+                        <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? typeColor : "#333"}`, background: isDone ? typeColor : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                          {isDone && <span style={{ color: "#000", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize: 13, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{item.text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Session note</div>
+                <textarea value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="How did it feel? Any PRs?" style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 60, fontFamily: "inherit", marginBottom: 12 }} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => saveEdit(selectedKey, selectedLog)} style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Save Changes</button>
+                  <button onClick={() => setEditingKey(null)} style={{ flex: 1, background: "#1e1e2e", color: "#888", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              /* ── VIEW MODE ── */
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, background: selectedLog.type === "hyrox" ? "#4ade8022" : "#60a5fa22", color: selectedLog.type === "hyrox" ? "#4ade80" : "#60a5fa", padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedLog.type === "hyrox" ? "#4ade8044" : "#60a5fa44"}` }}>
+                      {selectedLog.type === "hyrox" ? "🏋️ Hyrox" : "🏃 Run"}
+                    </span>
+                    <span style={{ fontSize: 13, color: "#ccc", fontWeight: 700 }}>{selectedLog.label}</span>
+                  </div>
+                  {/* Edit / Delete buttons */}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => startEdit(selectedKey, selectedLog)} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>✏️ Edit</button>
+                    <button onClick={() => handleDelete(selectedKey)} style={{ background: confirmDeleteKey === selectedKey ? "#f43f5e" : "#1e1e2e", border: "none", color: confirmDeleteKey === selectedKey ? "#fff" : "#f43f5e", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700, transition: "all 0.2s" }}>
+                      {confirmDeleteKey === selectedKey ? "Confirm?" : "🗑 Delete"}
+                    </button>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>{selectedLog.phaseName} · Logged at {selectedLog.time}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {selectedLog.items.map((item, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, color: item.checked ? "#555" : "#aaa", padding: "4px 0" }}>
+                      <span style={{ color: item.checked ? "#4ade80" : "#333", fontSize: 13, flexShrink: 0, marginTop: 1 }}>{item.checked ? "✓" : "○"}</span>
+                      <span style={{ textDecoration: item.checked ? "line-through" : "none", lineHeight: 1.4 }}>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+                {selectedLog.note && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "#666", fontStyle: "italic", padding: "8px 12px", background: "#0a0a0f", borderRadius: 8 }}>"{selectedLog.note}"</div>
+                )}
+              </div>
+            )
+          ) : (
+            <div style={{ fontSize: 13, color: "#444", textAlign: "center", padding: "20px 0" }}>No workout logged for this day</div>
+          )}
+        </div>
+      )}
+
+      {/* RECENT LOG LIST */}
+      {totalLogs > 0 && (
+        <div>
+          <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Recent Sessions</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {Object.entries(workoutLogs).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10).map(([key, log]) => {
+              const [y, m, d] = key.split("-");
+              const typeColor = log.type === "hyrox" ? "#4ade80" : "#60a5fa";
+              const checkedCount = log.items.filter(i => i.checked).length;
+              const isEditing = editingKey === key;
+              return (
+                <div key={key} style={{ background: "#111118", border: `1px solid ${typeColor}22`, borderLeft: `3px solid ${typeColor}`, borderRadius: 10, padding: "12px 14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8f0" }}>{log.label}</div>
+                      <div style={{ fontSize: 11, color: typeColor, marginTop: 2 }}>{log.type === "hyrox" ? "🏋️ Hyrox" : "🏃 Run"} · {log.phaseName}</div>
+                      {log.note && <div style={{ fontSize: 11, color: "#555", marginTop: 4, fontStyle: "italic" }}>"{log.note}"</div>}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: "#555" }}>{d}/{m}/{y}</div>
+                      <div style={{ fontSize: 11, color: checkedCount === log.items.length ? "#4ade80" : "#facc15" }}>{checkedCount}/{log.items.length} done</div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button onClick={() => { startEdit(key, log); setSelectedCalDay(null); }} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+                        <button onClick={() => handleDelete(key)} style={{ background: confirmDeleteKey === key ? "#f43f5e22" : "#1e1e2e", border: `1px solid ${confirmDeleteKey === key ? "#f43f5e" : "transparent"}`, color: confirmDeleteKey === key ? "#f43f5e" : "#666", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700, transition: "all 0.2s" }}>
+                          {confirmDeleteKey === key ? "Sure?" : "🗑"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Inline edit panel for list items */}
+                  {isEditing && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
+                      <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Tap to toggle · edit note below</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 10 }}>
+                        {log.items.map((item, i) => {
+                          const isDone = !!editChecked[i];
+                          return (
+                            <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? typeColor + "11" : "transparent", border: "none", borderRadius: 6, padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
+                              <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${isDone ? typeColor : "#333"}`, background: isDone ? typeColor : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                                {isDone && <span style={{ color: "#000", fontSize: 10, fontWeight: 800 }}>✓</span>}
+                              </div>
+                              <span style={{ fontSize: 12, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none" }}>{item.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <textarea value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="Session note..." style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 50, fontFamily: "inherit", marginBottom: 8 }} />
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => saveEdit(key, log)} style={{ flex: 1, background: typeColor, color: "#000", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Save</button>
+                        <button onClick={() => setEditingKey(null)} style={{ flex: 1, background: "#1e1e2e", color: "#888", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {totalLogs === 0 && (
+        <div style={{ textAlign: "center", padding: "32px 0" }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📓</div>
+          <div style={{ fontSize: 14, color: "#444" }}>No workouts logged yet</div>
+          <div style={{ fontSize: 12, color: "#333", marginTop: 6 }}>Go to Hyrox or Running, expand a session, check off exercises, and hit Complete</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LOGGABLE SESSION CARD (HYROX) ────────────────────────────────────────────
+
+function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
+  const [open, setOpen] = useState(false);
+  const allItems = session.blocks.flatMap(b => b.details.map(d => ({ text: d, blockTitle: b.title })));
+  const [checked, setChecked] = useState({});
+  const [note, setNote] = useState("");
+  const [completed, setCompleted] = useState(false);
+
+  const checkedCount = Object.values(checked).filter(Boolean).length;
+
+  function toggleItem(idx) {
+    setChecked(prev => ({ ...prev, [idx]: !prev[idx] }));
+  }
+
+  function handleComplete() {
+    const items = allItems.map((item, idx) => ({ text: item.text, checked: !!checked[idx] }));
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    onLog({ type, label: session.label, phaseName, items, note, time: timeStr, color });
+    setCompleted(true);
+    setTimeout(() => setCompleted(false), 3000);
+  }
+
+  return (
+    <div style={{ background: "#111118", border: `1px solid ${open ? color + "44" : "#1e1e2e"}`, borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s" }}>
+      <button onClick={() => setOpen(!open)} style={{ width: "100%", background: "none", border: "none", padding: "14px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", textAlign: "left" }}>
+        <div>
+          <span style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em" }}>{session.day}</span>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#e8e8f0", marginTop: 2 }}>{session.label}</div>
+          <div style={{ fontSize: 12, color, marginTop: 1 }}>{session.focus}</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {checkedCount > 0 && <span style={{ fontSize: 11, color: "#4ade80", background: "#4ade8015", padding: "2px 8px", borderRadius: 20 }}>{checkedCount}/{allItems.length}</span>}
+          <span style={{ color: "#555", fontSize: 18, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        </div>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 16px", borderTop: "1px solid #1e1e2e" }}>
+          {/* Exercises with checkboxes */}
+          {session.blocks.map((block, bi) => {
+            const blockStartIdx = session.blocks.slice(0, bi).reduce((acc, b) => acc + b.details.length, 0);
+            return (
+              <div key={bi} style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color, marginBottom: 6 }}>{block.title}</div>
+                {block.details.map((d, di) => {
+                  const idx = blockStartIdx + di;
+                  const isDone = !!checked[idx];
+                  return (
+                    <button key={di} onClick={() => toggleItem(idx)} style={{ width: "100%", background: isDone ? color + "11" : "transparent", border: "none", borderRadius: 8, padding: "7px 10px 7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 3, textAlign: "left" }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? color : "#333"}`, background: isDone ? color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                        {isDone && <span style={{ color: "#000", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize: 13, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{d}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {/* Note field */}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Session note (optional)</div>
+            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="How did it feel? Any PRs?" style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 60, fontFamily: "inherit" }} />
+          </div>
+          {/* Complete button */}
+          <button onClick={handleComplete} style={{ marginTop: 12, width: "100%", background: completed ? "#4ade80" : color, color: "#000", border: "none", borderRadius: 10, padding: "13px", fontSize: 13, fontWeight: 800, cursor: "pointer", transition: "all 0.2s", letterSpacing: "0.02em" }}>
+            {completed ? "✓ Logged!" : `Complete ${session.label}`}
+          </button>
+          {checkedCount > 0 && <div style={{ textAlign: "center", fontSize: 11, color: "#555", marginTop: 6 }}>{checkedCount} of {allItems.length} exercises checked</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LOGGABLE RUN CARD ────────────────────────────────────────────────────────
+
+function LoggableRunCard({ session, color, phaseName, onLog }) {
+  const [open, setOpen] = useState(false);
+  const [checked, setChecked] = useState({});
+  const [note, setNote] = useState("");
+  const [completed, setCompleted] = useState(false);
+
+  const checkedCount = Object.values(checked).filter(Boolean).length;
+
+  function toggleItem(idx) {
+    setChecked(prev => ({ ...prev, [idx]: !prev[idx] }));
+  }
+
+  function handleComplete() {
+    const items = session.details.map((text, idx) => ({ text, checked: !!checked[idx] }));
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    onLog({ type: "running", label: session.label, phaseName, items, note, time: timeStr, color: "#60a5fa" });
+    setCompleted(true);
+    setTimeout(() => setCompleted(false), 3000);
+  }
+
+  return (
+    <div style={{ background: "#0d111a", border: `1px solid ${open ? "#60a5fa44" : "#1a2030"}`, borderRadius: 12, overflow: "hidden" }}>
+      <button onClick={() => setOpen(!open)} style={{ width: "100%", background: "none", border: "none", padding: "14px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", textAlign: "left" }}>
+        <div>
+          <span style={{ fontSize: 11, color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" }}>{session.day}</span>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#e8e8f0", marginTop: 2 }}>{session.label}</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {checkedCount > 0 && <span style={{ fontSize: 11, color: "#60a5fa", background: "#60a5fa15", padding: "2px 8px", borderRadius: 20 }}>{checkedCount}/{session.details.length}</span>}
+          <span style={{ color: "#60a5fa", fontSize: 18, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        </div>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 16px", borderTop: "1px solid #1a2030" }}>
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+            {session.details.map((d, idx) => {
+              const isDone = !!checked[idx];
+              return (
+                <button key={idx} onClick={() => toggleItem(idx)} style={{ width: "100%", background: isDone ? "#60a5fa11" : "transparent", border: "none", borderRadius: 8, padding: "7px 10px 7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? "#60a5fa" : "#1a3050"}`, background: isDone ? "#60a5fa" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                    {isDone && <span style={{ color: "#000", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                  </div>
+                  <span style={{ fontSize: 13, color: isDone ? "#555" : "#7a9fc4", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{d}</span>
+                </button>
+              );
+            })}
+          </div>
+          {/* Note field */}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 11, color: "#444", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Session note (optional)</div>
+            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Distance, pace, how it felt..." style={{ width: "100%", background: "#060810", border: "1px solid #1a2030", borderRadius: 8, padding: "8px 12px", color: "#7a9fc4", fontSize: 12, resize: "none", height: 60, fontFamily: "inherit" }} />
+          </div>
+          {/* Complete button */}
+          <button onClick={handleComplete} style={{ marginTop: 12, width: "100%", background: completed ? "#4ade80" : "#60a5fa", color: "#000", border: "none", borderRadius: 10, padding: "13px", fontSize: 13, fontWeight: 800, cursor: "pointer", transition: "all 0.2s" }}>
+            {completed ? "✓ Logged!" : `Complete ${session.label}`}
+          </button>
+          {checkedCount > 0 && <div style={{ textAlign: "center", fontSize: 11, color: "#444", marginTop: 6 }}>{checkedCount} of {session.details.length} steps checked</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── STATION CARD ─────────────────────────────────────────────────────────────
+
+function StationCard({ station }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "#111118", border: `1px solid ${open ? station.color + "55" : "#1e1e2e"}`, borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s" }}>
+      <button onClick={() => setOpen(!open)} style={{ width: "100%", background: "none", border: "none", padding: "14px 16px", cursor: "pointer", textAlign: "left" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ background: station.color + "22", border: `1px solid ${station.color}44`, borderRadius: 8, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: station.color, flexShrink: 0 }}>{station.order}</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#e8e8f0" }}>{station.name}</div>
+              <div style={{ fontSize: 12, color: station.color, marginTop: 1 }}>{station.distance || station.reps}</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "#1e1e2e", padding: "4px 10px", borderRadius: 6, whiteSpace: "nowrap" }}>{station.weight}</div>
+            <span style={{ color: "#555", fontSize: 16, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+          </div>
+        </div>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 16px", borderTop: "1px solid #1e1e2e" }}>
+          <div style={{ fontSize: 13, color: "#aaa", padding: "12px 0 8px", lineHeight: 1.6 }}>{station.detail}</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", background: station.color + "11", border: `1px solid ${station.color}33`, borderRadius: 8, padding: "10px 12px" }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
+            <div style={{ fontSize: 12, color: station.color, lineHeight: 1.5 }}>{station.tip}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── NUTRITION DAY CARD ───────────────────────────────────────────────────────
+
+function NutritionDayCard({ day }) {
+  const [open, setOpen] = useState(false);
+  const macros = [
+    { label: "Calories", value: String(day.calories), unit: "kcal", color: day.color, pct: null },
+    { label: "Protein", value: `${day.protein}g`, unit: "", color: "#ccc", pct: Math.round((day.protein * 4 / day.calories) * 100) },
+    { label: "Carbs", value: `${day.carbs}g`, unit: "", color: "#ccc", pct: Math.round((day.carbs * 4 / day.calories) * 100) },
+    { label: "Fat", value: `${day.fat}g`, unit: "", color: "#ccc", pct: Math.round((day.fat * 9 / day.calories) * 100) },
+  ];
+  return (
+    <div style={{ background: "#111118", border: `1px solid ${open ? day.color + "55" : "#1e1e2e"}`, borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s" }}>
+      <button onClick={() => setOpen(!open)} style={{ width: "100%", background: "none", border: "none", padding: "14px 16px", cursor: "pointer", textAlign: "left" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#e8e8f0" }}>{day.label}</div>
+            <div style={{ fontSize: 12, color: day.color, marginTop: 2 }}>{day.subtitle}</div>
+          </div>
+          <span style={{ color: "#555", fontSize: 18, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {macros.map((m, i) => (
+            <div key={i} style={{ background: "#0a0a0f", border: `1px solid ${i === 0 ? day.color + "44" : "#1e1e2e"}`, borderRadius: 8, padding: "8px 8px", flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 9, color: "#555", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{m.label}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: m.color }}>{m.value}<span style={{ fontSize: 9, color: "#555" }}>{m.unit}</span></div>
+              {m.pct !== null && <div style={{ fontSize: 9, color: "#444", marginTop: 1 }}>{m.pct}%</div>}
+            </div>
+          ))}
+        </div>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 16px", borderTop: "1px solid #1e1e2e" }}>
+          <div style={{ fontSize: 11, color: day.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", margin: "14px 0 10px" }}>Meal Timing</div>
+          {day.timing.map((slot, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#aaa", marginBottom: 4 }}>{slot.time}</div>
+              {slot.items.map((item, j) => (
+                <div key={j} style={{ fontSize: 12, color: "#666", padding: "4px 0 4px 12px", borderLeft: "2px solid #2a2a3e", marginBottom: 2, lineHeight: 1.4 }}>{item}</div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<HyroxPlan />);
+</script>
+</body>
+</html>
