@@ -207,7 +207,7 @@ const tips = [
 
 const gymDays = [
   {
-    day: "Day 1", label: "Upper A", focus: "Chest · Delts · Abs Lower / Deep Core", color: "#38bdf8",
+    day: "Day 1", label: "Upper A", focus: "Chest · Delts · Abs Lower / Deep Core", color: "#fb923c",
     blocks: [
       { title: "Shoulders — High Frequency First", details: [
         "Lateral Dumbbell Raise: 4×12–20 (Tempo 2s up, 1s hold, 3s down; Rest 45s)",
@@ -252,7 +252,7 @@ const gymDays = [
     ],
   },
   {
-    day: "Day 3", label: "Upper A", focus: "Same as Day 1 · Abs Lower / Control", color: "#38bdf8",
+    day: "Day 3", label: "Upper A", focus: "Same as Day 1 · Abs Lower / Control", color: "#fb923c",
     blocks: [
       { title: "Shoulders — High Frequency First", details: [
         "Lateral Dumbbell Raise: 4×12–20 (Tempo 2s up, 1s hold, 3s down; Rest 45s)",
@@ -408,7 +408,7 @@ function HyroxPlan() {
         {/* TABS */}
         <div style={{ display: "flex", gap: 6, marginTop: 20, flexWrap: "wrap" }}>
           {tabs.map(tab => {
-            const activeColor = tab.id === "nutrition" ? "#a78bfa" : tab.id === "stations" ? "#f43f5e" : tab.id === "log" ? "#e879f9" : tab.id === "gym" ? "#38bdf8" : phase.color;
+            const activeColor = tab.id === "nutrition" ? "#a78bfa" : tab.id === "stations" ? "#f43f5e" : tab.id === "log" ? "#e879f9" : tab.id === "gym" ? "#fb923c" : phase.color;
             const isActive = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, minWidth: 60, padding: "11px 4px", background: isActive ? activeColor : "#111118", color: isActive ? "#000" : "#666", border: `1px solid ${isActive ? activeColor : "#2a2a3e"}`, borderRadius: 10, fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
@@ -523,8 +523,8 @@ function HyroxPlan() {
           {/* GYM */}
           {activeTab === "gym" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ padding: "14px 16px", background: "#0d1a26", border: "1px solid #38bdf844", borderRadius: 12 }}>
-                <div style={{ fontSize: 11, color: "#38bdf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>💪 5-Day Upper/Lower Split</div>
+              <div style={{ padding: "14px 16px", background: "#1a0e00", border: "1px solid #fb923c44", borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#fb923c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>💪 5-Day Upper/Lower Split</div>
                 <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.6 }}>Upper A × 2 · Upper B × 2 · Legs × 1 — progressive overload focus</div>
                 <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>Tap a day to expand, check off exercises, then hit Complete to log it.</div>
               </div>
@@ -632,7 +632,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
           { label: "Total", value: totalLogs, color: "#e879f9" },
           { label: "Hyrox", value: hyroxCount, color: "#4ade80" },
           { label: "Runs", value: runCount, color: "#60a5fa" },
-          { label: "Gym", value: gymCount, color: "#38bdf8" },
+          { label: "Gym", value: gymCount, color: "#fb923c" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#111118", border: `1px solid ${s.color}33`, borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -658,7 +658,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
             const log = workoutLogs[key];
             const isToday = key === today;
             const isSelected = day === selectedCalDay;
-            const dotColor = log ? (log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#38bdf8" : "#60a5fa") : null;
+            const dotColor = log ? (log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#fb923c" : "#60a5fa") : null;
             return (
               <button key={i} onClick={() => setSelectedCalDay(isSelected ? null : day)} style={{ background: isSelected ? "#2a2a3e" : "transparent", border: isToday ? "1px solid #e879f944" : "1px solid transparent", borderRadius: 8, padding: "6px 2px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                 <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? "#e879f9" : log ? "#e8e8f0" : "#555" }}>{day}</span>
@@ -670,7 +670,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
         <div style={{ display: "flex", gap: 14, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80" }} /><span style={{ fontSize: 11, color: "#555" }}>Hyrox</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#60a5fa" }} /><span style={{ fontSize: 11, color: "#555" }}>Run</span></div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#38bdf8" }} /><span style={{ fontSize: 11, color: "#555" }}>Gym</span></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fb923c" }} /><span style={{ fontSize: 11, color: "#555" }}>Gym</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#e879f944", border: "1px solid #e879f9" }} /><span style={{ fontSize: 11, color: "#555" }}>Today</span></div>
         </div>
       </div>
@@ -689,7 +689,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 14 }}>
                   {selectedLog.items.map((item, i) => {
                     const isDone = !!editChecked[i];
-                    const typeColor = selectedLog.type === "hyrox" ? "#4ade80" : "#60a5fa";
+                    const typeColor = selectedLog.type === "hyrox" ? "#4ade80" : selectedLog.type === "gym" ? "#fb923c" : "#60a5fa";
                     return (
                       <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? typeColor + "11" : "transparent", border: "none", borderRadius: 8, padding: "7px 10px 7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left" }}>
                         <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? typeColor : "#333"}`, background: isDone ? typeColor : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
@@ -712,7 +712,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, background: selectedLog.type === "hyrox" ? "#4ade8022" : selectedLog.type === "gym" ? "#38bdf822" : "#60a5fa22", color: selectedLog.type === "hyrox" ? "#4ade80" : selectedLog.type === "gym" ? "#38bdf8" : "#60a5fa", padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedLog.type === "hyrox" ? "#4ade8044" : selectedLog.type === "gym" ? "#38bdf844" : "#60a5fa44"}` }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, background: selectedLog.type === "hyrox" ? "#4ade8022" : selectedLog.type === "gym" ? "#fb923c22" : "#60a5fa22", color: selectedLog.type === "hyrox" ? "#4ade80" : selectedLog.type === "gym" ? "#fb923c" : "#60a5fa", padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedLog.type === "hyrox" ? "#4ade8044" : selectedLog.type === "gym" ? "#fb923c44" : "#60a5fa44"}` }}>
                       {selectedLog.type === "hyrox" ? "🏋️ Hyrox" : selectedLog.type === "gym" ? "💪 Gym" : "🏃 Run"}
                     </span>
                     <span style={{ fontSize: 13, color: "#ccc", fontWeight: 700 }}>{selectedLog.label}</span>
@@ -752,7 +752,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {Object.entries(workoutLogs).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10).map(([key, log]) => {
               const [y, m, d] = key.split("-");
-              const typeColor = log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#38bdf8" : "#60a5fa";
+              const typeColor = log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#fb923c" : "#60a5fa";
               const checkedCount = log.items.filter(i => i.checked).length;
               const isEditing = editingKey === key;
               return (
