@@ -14,7 +14,7 @@
 body { background: #0a0a0f; color: #e8e8f0; font-family: -apple-system, "Helvetica Neue", sans-serif; }
 textarea { outline: none; }
 button { outline: none; -webkit-tap-highlight-color: transparent; }
-::-webkit-scrollbar { width: 4px; } 
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0f; }
 ::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 2px; }
 </style>
@@ -201,6 +201,118 @@ const tips = [
   { icon: "🧘", title: "Flexibility Days", body: "The 3 rest days matter. Light walk, swim, or yoga on one of them goes a long way over 6 months." },
 ];
 
+// ─── GYM SESSIONS DATA ───────────────────────────────────────────────────────
+
+const gymDays = [
+  {
+    day: "Day 1", label: "Upper A", focus: "Chest · Delts · Abs Lower / Deep Core", color: "#38bdf8",
+    blocks: [
+      { title: "Shoulders — High Frequency First", details: [
+        "Lateral Dumbbell Raise: 4×12–20 (Tempo 2s up, 1s hold, 3s down; Rest 45s)",
+        "Shoulder Press: 3×8–10 (Controlled; Rest 90s)",
+        "Front Raise: 3×12–15 (Slow, controlled; Rest 45–60s)",
+        "Rear Delts Cable/Machine: 3×15–20 (2s squeeze; Rest 45–60s)",
+      ]},
+      { title: "Chest — Heavy / Low Frequency", details: [
+        "Chest Press: 3×6–10 (Progressive overload; Rest 120s)",
+        "Incline Chest Press: 3×8–10 (Rest 90s)",
+        "Chest Flys: 2–3×12–15 (Slow stretch; Rest 60s)",
+      ]},
+      { title: "Abs — Lower / Deep Core", details: [
+        "Ab Wheel Rollout: 3×8–10",
+        "Vertical / Hanging Leg Raise: 3×12–15",
+      ]},
+    ],
+  },
+  {
+    day: "Day 2", label: "Upper B", focus: "Back · Arms · Abs Flexion / Obliques", color: "#34d399",
+    blocks: [
+      { title: "Back — Heavy / Low Frequency", details: [
+        "Back Pull-Down: 4×8–12 (2s pull, 1s squeeze, 2–3s down; Rest 90–120s)",
+        "Back Rows: 4×6–10 (Heavy but controlled; Rest 120s)",
+      ]},
+      { title: "Rear Delts — High Frequency Continued", details: [
+        "Rear Delt Fly / Face Pull: 3×15–20 (2s squeeze; Rest 45–60s)",
+      ]},
+      { title: "Arms — Biceps (Hybrid Structure)", details: [
+        "Bicep Curls: 10→8→6→Drop 12–15 (Rest 60–90s)",
+        "Alternating Dumbbell Curl Machine: 3×10–12 per arm (Rest 60s)",
+        "Bicep 21s: 2 rounds",
+      ]},
+      { title: "Arms — Triceps", details: [
+        "Tricep Overhead Extension: 3×8–10 (Rest 75–90s)",
+        "Tricep Cable Pushdown: Last set drop→15 (Rest 60s)",
+      ]},
+      { title: "Abs — Flexion / Obliques", details: [
+        "Cable Crunch: 3×12–15",
+        "Side Crunch Machine: 3×15",
+      ]},
+    ],
+  },
+  {
+    day: "Day 3", label: "Upper A", focus: "Same as Day 1 · Abs Lower / Control", color: "#38bdf8",
+    blocks: [
+      { title: "Shoulders — High Frequency First", details: [
+        "Lateral Dumbbell Raise: 4×12–20 (Tempo 2s up, 1s hold, 3s down; Rest 45s)",
+        "Shoulder Press: 3×8–10 (Controlled; Rest 90s)",
+        "Front Raise: 3×12–15 (Slow, controlled; Rest 45–60s)",
+        "Rear Delts Cable/Machine: 3×15–20 (2s squeeze; Rest 45–60s)",
+      ]},
+      { title: "Chest — Heavy / Low Frequency", details: [
+        "Chest Press: 3×6–10 (Progressive overload; Rest 120s)",
+        "Incline Chest Press: 3×8–10 (Rest 90s)",
+        "Chest Flys: 2–3×12–15 (Slow stretch; Rest 60s)",
+      ]},
+      { title: "Abs — Lower / Control", details: [
+        "Half BOSU Ball Legs Raised: 3×15",
+        "Ab Wheel Rollout: 2×8",
+      ]},
+    ],
+  },
+  {
+    day: "Day 4", label: "Updated Legs", focus: "No Barbell · No Deadlift · No Hip Thrust", color: "#fb923c",
+    blocks: [
+      { title: "Abs — Light / Recovery", details: [
+        "Goblet Squat: 4×8–12 (Rest 90–120s)",
+        "Bulgarian Split Squat: 3×8–12 each leg (Rest 90s)",
+        "Walking Lunges: 3×12–16 total steps (Rest 60–90s)",
+        "Hamstring Slider Curls or Stability Ball Curls: 3×10–15 (Controlled; Rest 60–90s)",
+        "Standing Dumbbell Calf Raises: 4×12–20 (2s pause at top)",
+      ]},
+      { title: "Abs — Light / Recovery (Choose ONE)", details: [
+        "Cable Crunch: 2×12–15",
+        "OR Vertical Leg Crunch: 2×10",
+      ]},
+    ],
+  },
+  {
+    day: "Day 5", label: "Upper B", focus: "Same as Day 2 · Abs Full Core Finish", color: "#34d399",
+    blocks: [
+      { title: "Back — Heavy / Low Frequency", details: [
+        "Back Pull-Down: 4×8–12 (2s pull, 1s squeeze, 2–3s down; Rest 90–120s)",
+        "Back Rows: 4×6–10 (Heavy but controlled; Rest 120s)",
+      ]},
+      { title: "Rear Delts — High Frequency Continued", details: [
+        "Rear Delt Fly / Face Pull: 3×15–20 (2s squeeze; Rest 45–60s)",
+      ]},
+      { title: "Arms — Biceps (Hybrid Structure)", details: [
+        "Bicep Curls: 10→8→6→Drop 12–15 (Rest 80–90s)",
+        "Alternating Dumbbell Curl Machine: 3×10–12 per arm (Rest 60s)",
+        "Bicep 21s: 2 rounds",
+      ]},
+      { title: "Arms — Triceps", details: [
+        "Tricep Overhead Extension: 3×8–10 (Rest 75–90s)",
+        "Tricep Cable Pushdown: Last set drop→15 (Rest 60s)",
+      ]},
+      { title: "Abs — Full Core Finish", details: [
+        "Cable Crunch: 3×15",
+        "Side Crunch Machine: 3×15",
+        "Ab Wheel Rollout: 2×8–10",
+      ]},
+    ],
+  },
+];
+
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 function todayKey() {
@@ -224,7 +336,6 @@ function HyroxPlan() {
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [selectedCalDay, setSelectedCalDay] = useState(null);
 
-  // Persist logs to localStorage
   const persistLogs = (logs) => {
     try { localStorage.setItem("hyrox_logs", JSON.stringify(logs)); } catch(e) {}
     return logs;
@@ -235,6 +346,7 @@ function HyroxPlan() {
   const tabs = [
     { id: "hyrox", label: "🏋️ Hyrox" },
     { id: "running", label: "🏃 Running" },
+    { id: "gym", label: "💪 Gym" },
     { id: "stations", label: "📋 Stations" },
     { id: "nutrition", label: "🥗 Nutrition" },
     { id: "log", label: "📓 Log" },
@@ -249,14 +361,13 @@ function HyroxPlan() {
     setWorkoutLogs(prev => {
       const next = { ...prev };
       delete next[key];
-      persistLogs(next);
       return next;
     });
     setSelectedCalDay(null);
   }
 
   function editLog(key, updatedEntry) {
-    setWorkoutLogs(prev => { const next = { ...prev, [key]: updatedEntry }; persistLogs(next); return next; });
+    setWorkoutLogs(prev => ({ ...prev, [key]: updatedEntry }));
   }
 
   return (
@@ -295,7 +406,7 @@ function HyroxPlan() {
         {/* TABS */}
         <div style={{ display: "flex", gap: 6, marginTop: 20, flexWrap: "wrap" }}>
           {tabs.map(tab => {
-            const activeColor = tab.id === "nutrition" ? "#a78bfa" : tab.id === "stations" ? "#f43f5e" : tab.id === "log" ? "#e879f9" : phase.color;
+            const activeColor = tab.id === "nutrition" ? "#a78bfa" : tab.id === "stations" ? "#f43f5e" : tab.id === "log" ? "#e879f9" : tab.id === "gym" ? "#38bdf8" : phase.color;
             const isActive = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, minWidth: 60, padding: "11px 4px", background: isActive ? activeColor : "#111118", color: isActive ? "#000" : "#666", border: `1px solid ${isActive ? activeColor : "#2a2a3e"}`, borderRadius: 10, fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
@@ -407,6 +518,20 @@ function HyroxPlan() {
             </div>
           )}
 
+          {/* GYM */}
+          {activeTab === "gym" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ padding: "14px 16px", background: "#0d1a26", border: "1px solid #38bdf844", borderRadius: 12 }}>
+                <div style={{ fontSize: 11, color: "#38bdf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>💪 5-Day Upper/Lower Split</div>
+                <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.6 }}>Upper A × 2 · Upper B × 2 · Legs × 1 — progressive overload focus</div>
+                <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>Tap a day to expand, check off exercises, then hit Complete to log it.</div>
+              </div>
+              {gymDays.map((session, i) => (
+                <LoggableSessionCard key={i} session={session} color={session.color} type="gym" phaseName="Gym Program" onLog={logWorkout} />
+              ))}
+            </div>
+          )}
+
           {/* LOG TAB */}
           {activeTab === "log" && (
             <LogTab workoutLogs={workoutLogs} calMonth={calMonth} setCalMonth={setCalMonth} selectedCalDay={selectedCalDay} setSelectedCalDay={setSelectedCalDay} onDelete={deleteLog} onEdit={editLog} />
@@ -463,6 +588,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
   const totalLogs = Object.keys(workoutLogs).length;
   const hyroxCount = Object.values(workoutLogs).filter(l => l.type === "hyrox").length;
   const runCount = Object.values(workoutLogs).filter(l => l.type === "running").length;
+  const gymCount = Object.values(workoutLogs).filter(l => l.type === "gym").length;
 
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
@@ -499,15 +625,16 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
       {/* STATS STRIP */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
         {[
-          { label: "Total Sessions", value: totalLogs, color: "#e879f9" },
+          { label: "Total", value: totalLogs, color: "#e879f9" },
           { label: "Hyrox", value: hyroxCount, color: "#4ade80" },
           { label: "Runs", value: runCount, color: "#60a5fa" },
+          { label: "Gym", value: gymCount, color: "#38bdf8" },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#111118", border: `1px solid ${s.color}33`, borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: "#555", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+          <div key={i} style={{ background: "#111118", border: `1px solid ${s.color}33`, borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: "#555", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -529,7 +656,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
             const log = workoutLogs[key];
             const isToday = key === today;
             const isSelected = day === selectedCalDay;
-            const dotColor = log ? (log.type === "hyrox" ? "#4ade80" : "#60a5fa") : null;
+            const dotColor = log ? (log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#38bdf8" : "#60a5fa") : null;
             return (
               <button key={i} onClick={() => setSelectedCalDay(isSelected ? null : day)} style={{ background: isSelected ? "#2a2a3e" : "transparent", border: isToday ? "1px solid #e879f944" : "1px solid transparent", borderRadius: 8, padding: "6px 2px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                 <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? "#e879f9" : log ? "#e8e8f0" : "#555" }}>{day}</span>
@@ -541,6 +668,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
         <div style={{ display: "flex", gap: 14, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80" }} /><span style={{ fontSize: 11, color: "#555" }}>Hyrox</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#60a5fa" }} /><span style={{ fontSize: 11, color: "#555" }}>Run</span></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#38bdf8" }} /><span style={{ fontSize: 11, color: "#555" }}>Gym</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#e879f944", border: "1px solid #e879f9" }} /><span style={{ fontSize: 11, color: "#555" }}>Today</span></div>
         </div>
       </div>
@@ -582,8 +710,8 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, background: selectedLog.type === "hyrox" ? "#4ade8022" : "#60a5fa22", color: selectedLog.type === "hyrox" ? "#4ade80" : "#60a5fa", padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedLog.type === "hyrox" ? "#4ade8044" : "#60a5fa44"}` }}>
-                      {selectedLog.type === "hyrox" ? "🏋️ Hyrox" : "🏃 Run"}
+                    <span style={{ fontSize: 13, fontWeight: 700, background: selectedLog.type === "hyrox" ? "#4ade8022" : selectedLog.type === "gym" ? "#38bdf822" : "#60a5fa22", color: selectedLog.type === "hyrox" ? "#4ade80" : selectedLog.type === "gym" ? "#38bdf8" : "#60a5fa", padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedLog.type === "hyrox" ? "#4ade8044" : selectedLog.type === "gym" ? "#38bdf844" : "#60a5fa44"}` }}>
+                      {selectedLog.type === "hyrox" ? "🏋️ Hyrox" : selectedLog.type === "gym" ? "💪 Gym" : "🏃 Run"}
                     </span>
                     <span style={{ fontSize: 13, color: "#ccc", fontWeight: 700 }}>{selectedLog.label}</span>
                   </div>
@@ -622,7 +750,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {Object.entries(workoutLogs).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10).map(([key, log]) => {
               const [y, m, d] = key.split("-");
-              const typeColor = log.type === "hyrox" ? "#4ade80" : "#60a5fa";
+              const typeColor = log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#38bdf8" : "#60a5fa";
               const checkedCount = log.items.filter(i => i.checked).length;
               const isEditing = editingKey === key;
               return (
@@ -630,7 +758,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8f0" }}>{log.label}</div>
-                      <div style={{ fontSize: 11, color: typeColor, marginTop: 2 }}>{log.type === "hyrox" ? "🏋️ Hyrox" : "🏃 Run"} · {log.phaseName}</div>
+                      <div style={{ fontSize: 11, color: typeColor, marginTop: 2 }}>{log.type === "hyrox" ? "🏋️ Hyrox" : log.type === "gym" ? "💪 Gym" : "🏃 Run"} · {log.phaseName}</div>
                       {log.note && <div style={{ fontSize: 11, color: "#555", marginTop: 4, fontStyle: "italic" }}>"{log.note}"</div>}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
