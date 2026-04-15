@@ -12,8 +12,10 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { background: #0a0a0f; color: #e8e8f0; font-family: -apple-system, "Helvetica Neue", sans-serif; }
-textarea { outline: none; }
+textarea, input { outline: none; }
 button { outline: none; -webkit-tap-highlight-color: transparent; }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0f; }
 ::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 2px; }
@@ -814,7 +816,16 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
   );
 }
 
-// ─── LOGGABLE SESSION CARD (HYROX) ────────────────────────────────────────────
+// ─── LOGGABLE SESSION CARD (HYROX + GYM) ─────────────────────────────────────
+
+const GYM_WEIGHTS_KEY = "hyrox_gym_weights";
+
+function loadSavedWeights() {
+  try { const s = localStorage.getItem(GYM_WEIGHTS_KEY); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+}
+function saveWeights(data) {
+  try { localStorage.setItem(GYM_WEIGHTS_KEY, JSON.stringify(data)); } catch(e) {}
+}
 
 function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
   const [open, setOpen] = useState(false);
@@ -822,6 +833,19 @@ function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
   const [checked, setChecked] = useState({});
   const [note, setNote] = useState("");
   const [completed, setCompleted] = useState(false);
+  const isGym = type === "gym";
+
+  // Weight/reps state — keyed by a stable exercise key (session label + exercise text)
+  const [exerciseData, setExerciseData] = useState(() => {
+    if (!isGym) return {};
+    const saved = loadSavedWeights();
+    const data = {};
+    allItems.forEach((item, idx) => {
+      const key = `${session.label}__${idx}`;
+      data[idx] = { weight: saved[key]?.weight || "", reps: saved[key]?.reps || "" };
+    });
+    return data;
+  });
 
   const checkedCount = Object.values(checked).filter(Boolean).length;
 
@@ -829,8 +853,24 @@ function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
     setChecked(prev => ({ ...prev, [idx]: !prev[idx] }));
   }
 
+  function updateExerciseField(idx, field, value) {
+    setExerciseData(prev => {
+      const next = { ...prev, [idx]: { ...prev[idx], [field]: value } };
+      // Persist to localStorage immediately
+      const saved = loadSavedWeights();
+      const key = `${session.label}__${idx}`;
+      saved[key] = { weight: next[idx].weight, reps: next[idx].reps };
+      saveWeights(saved);
+      return next;
+    });
+  }
+
   function handleComplete() {
-    const items = allItems.map((item, idx) => ({ text: item.text, checked: !!checked[idx] }));
+    const items = allItems.map((item, idx) => {
+      const ed = exerciseData[idx];
+      const suffix = isGym && (ed?.weight || ed?.reps) ? ` [${ed?.weight ? ed.weight + "kg" : ""}${ed?.weight && ed?.reps ? " · " : ""}${ed?.reps ? ed.reps + " reps" : ""}]` : "";
+      return { text: item.text + suffix, checked: !!checked[idx] };
+    });
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     onLog({ type, label: session.label, phaseName, items, note, time: timeStr, color });
@@ -853,7 +893,13 @@ function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
       </button>
       {open && (
         <div style={{ padding: "0 16px 16px", borderTop: "1px solid #1e1e2e" }}>
-          {/* Exercises with checkboxes */}
+          {isGym && (
+            <div style={{ display: "flex", gap: 6, marginTop: 12, marginBottom: 2 }}>
+              <div style={{ flex: 1 }} />
+              <div style={{ width: 64, fontSize: 9, color: "#555", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>kg</div>
+              <div style={{ width: 64, fontSize: 9, color: "#555", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>reps</div>
+            </div>
+          )}
           {session.blocks.map((block, bi) => {
             const blockStartIdx = session.blocks.slice(0, bi).reduce((acc, b) => acc + b.details.length, 0);
             return (
@@ -862,13 +908,40 @@ function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
                 {block.details.map((d, di) => {
                   const idx = blockStartIdx + di;
                   const isDone = !!checked[idx];
+                  const ed = exerciseData[idx] || { weight: "", reps: "" };
                   return (
-                    <button key={di} onClick={() => toggleItem(idx)} style={{ width: "100%", background: isDone ? color + "11" : "transparent", border: "none", borderRadius: 8, padding: "7px 10px 7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 3, textAlign: "left" }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? color : "#333"}`, background: isDone ? color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
-                        {isDone && <span style={{ color: "#000", fontSize: 12, fontWeight: 800 }}>✓</span>}
-                      </div>
-                      <span style={{ fontSize: 13, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{d}</span>
-                    </button>
+                    <div key={di} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      {/* Checkbox + label */}
+                      <button onClick={() => toggleItem(idx)} style={{ flex: 1, background: isDone ? color + "11" : "transparent", border: "none", borderRadius: 8, padding: "7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left", minWidth: 0 }}>
+                        <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? color : "#333"}`, background: isDone ? color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                          {isDone && <span style={{ color: "#000", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize: 12, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{d}</span>
+                      </button>
+                      {/* Weight + Reps inputs — only for gym */}
+                      {isGym && (
+                        <>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="—"
+                            value={ed.weight}
+                            onChange={e => updateExerciseField(idx, "weight", e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            style={{ width: 64, background: "#0a0a0f", border: `1px solid ${ed.weight ? color + "66" : "#2a2a3e"}`, borderRadius: 8, padding: "6px 8px", color: ed.weight ? color : "#555", fontSize: 13, fontWeight: 700, textAlign: "center", outline: "none", fontFamily: "inherit" }}
+                          />
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="—"
+                            value={ed.reps}
+                            onChange={e => updateExerciseField(idx, "reps", e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            style={{ width: 64, background: "#0a0a0f", border: `1px solid ${ed.reps ? color + "66" : "#2a2a3e"}`, borderRadius: 8, padding: "6px 8px", color: ed.reps ? color : "#555", fontSize: 13, fontWeight: 700, textAlign: "center", outline: "none", fontFamily: "inherit" }}
+                          />
+                        </>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -877,7 +950,7 @@ function LoggableSessionCard({ session, color, type, phaseName, onLog }) {
           {/* Note field */}
           <div style={{ marginTop: 14 }}>
             <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Session note (optional)</div>
-            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="How did it feel? Any PRs?" style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 60, fontFamily: "inherit" }} />
+            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={isGym ? "How did it go? Any new PRs?" : "How did it feel? Any PRs?"} style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 60, fontFamily: "inherit" }} />
           </div>
           {/* Complete button */}
           <button onClick={handleComplete} style={{ marginTop: 12, width: "100%", background: completed ? "#4ade80" : color, color: "#000", border: "none", borderRadius: 10, padding: "13px", fontSize: 13, fontWeight: 800, cursor: "pointer", transition: "all 0.2s", letterSpacing: "0.02em" }}>
