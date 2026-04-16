@@ -331,10 +331,35 @@ const DAY_LABELS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 
+// ─── MIGRATION: convert old single-entry format to array format ───────────────
+function loadAndMigrateLogs() {
+  try {
+    const s = localStorage.getItem("hyrox_logs");
+    if (!s) return {};
+    const parsed = JSON.parse(s);
+    let migrated = false;
+    const result = {};
+    Object.entries(parsed).forEach(([dateKey, value]) => {
+      if (Array.isArray(value)) {
+        // Already new format — ensure each entry has an id
+        result[dateKey] = value.map((e, i) => e.id ? e : { ...e, id: `${dateKey}_${i}_${Date.now()}` });
+      } else if (value && typeof value === "object") {
+        // Old format — single entry, wrap in array and assign id
+        result[dateKey] = [{ ...value, id: `${dateKey}_0_migrated` }];
+        migrated = true;
+      }
+    });
+    if (migrated) {
+      localStorage.setItem("hyrox_logs", JSON.stringify(result));
+    }
+    return result;
+  } catch(e) { return {}; }
+}
+
 function HyroxPlan() {
   const [activePhase, setActivePhase] = useState(0);
   const [activeTab, setActiveTab] = useState("hyrox");
-  const [workoutLogs, setWorkoutLogs] = useState(() => { try { const s = localStorage.getItem("hyrox_logs"); return s ? JSON.parse(s) : {}; } catch(e) { return {}; } });
+  const [workoutLogs, setWorkoutLogs] = useState(() => loadAndMigrateLogs());
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [selectedCalDay, setSelectedCalDay] = useState(null);
 
