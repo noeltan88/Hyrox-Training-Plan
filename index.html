@@ -338,11 +338,6 @@ function HyroxPlan() {
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [selectedCalDay, setSelectedCalDay] = useState(null);
 
-  const persistLogs = (logs) => {
-    try { localStorage.setItem("hyrox_logs", JSON.stringify(logs)); } catch(e) {}
-    return logs;
-  };
-
   const phase = phases[activePhase];
 
   const tabs = [
@@ -356,20 +351,33 @@ function HyroxPlan() {
 
   function logWorkout(entry) {
     const key = todayKey();
-    setWorkoutLogs(prev => { const next = { ...prev, [key]: entry }; persistLogs(next); return next; });
-  }
-
-  function deleteLog(key) {
+    const id = Date.now().toString();
     setWorkoutLogs(prev => {
-      const next = { ...prev };
-      delete next[key];
+      const dayEntries = prev[key] ? [...prev[key]] : [];
+      const next = { ...prev, [key]: [...dayEntries, { ...entry, id }] };
+      try { localStorage.setItem("hyrox_logs", JSON.stringify(next)); } catch(e) {}
       return next;
     });
-    setSelectedCalDay(null);
   }
 
-  function editLog(key, updatedEntry) {
-    setWorkoutLogs(prev => ({ ...prev, [key]: updatedEntry }));
+  function deleteLog(dateKey, entryId) {
+    setWorkoutLogs(prev => {
+      const dayEntries = (prev[dateKey] || []).filter(e => e.id !== entryId);
+      const next = { ...prev };
+      if (dayEntries.length === 0) delete next[dateKey];
+      else next[dateKey] = dayEntries;
+      try { localStorage.setItem("hyrox_logs", JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+  }
+
+  function editLog(dateKey, entryId, updatedEntry) {
+    setWorkoutLogs(prev => {
+      const dayEntries = (prev[dateKey] || []).map(e => e.id === entryId ? { ...updatedEntry, id: entryId } : e);
+      const next = { ...prev, [dateKey]: dayEntries };
+      try { localStorage.setItem("hyrox_logs", JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
   }
 
   return (
@@ -577,56 +585,70 @@ function HyroxPlan() {
 
 // ─── LOG TAB ──────────────────────────────────────────────────────────────────
 
+function typeColor(t) { return t === "hyrox" ? "#4ade80" : t === "gym" ? "#fb923c" : "#60a5fa"; }
+function typeLabel(t) { return t === "hyrox" ? "🏋️ Hyrox" : t === "gym" ? "💪 Gym" : "🏃 Run"; }
+
 function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelectedCalDay, onDelete, onEdit }) {
-  const [editingKey, setEditingKey] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [editNote, setEditNote] = useState("");
   const [editChecked, setEditChecked] = useState({});
-  const [confirmDeleteKey, setConfirmDeleteKey] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const { year, month } = calMonth;
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = todayKey();
-  const totalLogs = Object.keys(workoutLogs).length;
-  const hyroxCount = Object.values(workoutLogs).filter(l => l.type === "hyrox").length;
-  const runCount = Object.values(workoutLogs).filter(l => l.type === "running").length;
-  const gymCount = Object.values(workoutLogs).filter(l => l.type === "gym").length;
+
+  const allEntries = Object.entries(workoutLogs).flatMap(([dateKey, entries]) =>
+    (Array.isArray(entries) ? entries : [entries]).map(e => ({ ...e, dateKey }))
+  );
+  const totalLogs = allEntries.length;
+  const hyroxCount = allEntries.filter(e => e.type === "hyrox").length;
+  const runCount = allEntries.filter(e => e.type === "running").length;
+  const gymCount = allEntries.filter(e => e.type === "gym").length;
 
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   const selectedKey = selectedCalDay ? formatDateKey(year, month, selectedCalDay) : null;
-  const selectedLog = selectedKey ? workoutLogs[selectedKey] : null;
+  const selectedEntries = selectedKey
+    ? (workoutLogs[selectedKey] ? (Array.isArray(workoutLogs[selectedKey]) ? workoutLogs[selectedKey] : [workoutLogs[selectedKey]]) : [])
+    : [];
 
-  function startEdit(key, log) {
-    setEditingKey(key);
-    setEditNote(log.note || "");
+  function startEdit(dateKey, entry) {
+    setEditingId({ dateKey, entryId: entry.id });
+    setEditNote(entry.note || "");
     const c = {};
-    log.items.forEach((item, i) => { c[i] = item.checked; });
+    entry.items.forEach((item, i) => { c[i] = item.checked; });
     setEditChecked(c);
   }
 
-  function saveEdit(key, log) {
-    const updatedItems = log.items.map((item, i) => ({ ...item, checked: !!editChecked[i] }));
-    onEdit(key, { ...log, items: updatedItems, note: editNote });
-    setEditingKey(null);
+  function saveEdit(dateKey, entry) {
+    const updatedItems = entry.items.map((item, i) => ({ ...item, checked: !!editChecked[i] }));
+    onEdit(dateKey, entry.id, { ...entry, items: updatedItems, note: editNote });
+    setEditingId(null);
   }
 
-  function handleDelete(key) {
-    if (confirmDeleteKey === key) {
-      onDelete(key);
-      setConfirmDeleteKey(null);
+  function handleDelete(dateKey, entryId) {
+    const key = `${dateKey}__${entryId}`;
+    if (confirmDeleteId === key) {
+      onDelete(dateKey, entryId);
+      setConfirmDeleteId(null);
     } else {
-      setConfirmDeleteKey(key);
-      setTimeout(() => setConfirmDeleteKey(null), 3000);
+      setConfirmDeleteId(key);
+      setTimeout(() => setConfirmDeleteId(null), 3000);
     }
+  }
+
+  function isEditingEntry(dateKey, entryId) {
+    return editingId && editingId.dateKey === dateKey && editingId.entryId === entryId;
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-      {/* STATS STRIP */}
+      {/* STATS */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
         {[
           { label: "Total", value: totalLogs, color: "#e879f9" },
@@ -655,19 +677,24 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
           {cells.map((day, i) => {
             if (!day) return <div key={i} />;
             const key = formatDateKey(year, month, day);
-            const log = workoutLogs[key];
+            const dayEntries = workoutLogs[key] ? (Array.isArray(workoutLogs[key]) ? workoutLogs[key] : [workoutLogs[key]]) : [];
             const isToday = key === today;
             const isSelected = day === selectedCalDay;
-            const dotColor = log ? (log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#fb923c" : "#60a5fa") : null;
             return (
-              <button key={i} onClick={() => setSelectedCalDay(isSelected ? null : day)} style={{ background: isSelected ? "#2a2a3e" : "transparent", border: isToday ? "1px solid #e879f944" : "1px solid transparent", borderRadius: 8, padding: "6px 2px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? "#e879f9" : log ? "#e8e8f0" : "#555" }}>{day}</span>
-                {dotColor && <div style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor }} />}
+              <button key={i} onClick={() => setSelectedCalDay(isSelected ? null : day)} style={{ background: isSelected ? "#2a2a3e" : "transparent", border: isToday ? "1px solid #e879f944" : "1px solid transparent", borderRadius: 8, padding: "5px 2px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? "#e879f9" : dayEntries.length > 0 ? "#e8e8f0" : "#555" }}>{day}</span>
+                {dayEntries.length > 0 && (
+                  <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
+                    {dayEntries.map((e, ei) => (
+                      <div key={ei} style={{ width: 6, height: 6, borderRadius: "50%", background: typeColor(e.type) }} />
+                    ))}
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
+        <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80" }} /><span style={{ fontSize: 11, color: "#555" }}>Hyrox</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#60a5fa" }} /><span style={{ fontSize: 11, color: "#555" }}>Run</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fb923c" }} /><span style={{ fontSize: 11, color: "#555" }}>Gym</span></div>
@@ -675,132 +702,136 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
         </div>
       </div>
 
-      {/* SELECTED DAY LOG */}
+      {/* SELECTED DAY */}
       {selectedCalDay && (
-        <div style={{ background: "#111118", border: `1px solid ${selectedLog ? (selectedLog.type === "hyrox" ? "#4ade8044" : "#60a5fa44") : "#1e1e2e"}`, borderRadius: 12, padding: 16 }}>
-          <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>
+        <div style={{ background: "#111118", border: "1px solid #2a2a3e", borderRadius: 12, padding: 16 }}>
+          <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
             {MONTH_NAMES[month]} {selectedCalDay}, {year}
           </div>
-          {selectedLog ? (
-            editingKey === selectedKey ? (
-              /* ── EDIT MODE ── */
-              <div>
-                <div style={{ fontSize: 12, color: "#888", fontWeight: 700, marginBottom: 10 }}>Editing — tap to toggle exercises</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 14 }}>
-                  {selectedLog.items.map((item, i) => {
-                    const isDone = !!editChecked[i];
-                    const typeColor = selectedLog.type === "hyrox" ? "#4ade80" : selectedLog.type === "gym" ? "#fb923c" : "#60a5fa";
-                    return (
-                      <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? typeColor + "11" : "transparent", border: "none", borderRadius: 8, padding: "7px 10px 7px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 10, textAlign: "left" }}>
-                        <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${isDone ? typeColor : "#333"}`, background: isDone ? typeColor : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
-                          {isDone && <span style={{ color: "#000", fontSize: 12, fontWeight: 800 }}>✓</span>}
-                        </div>
-                        <span style={{ fontSize: 13, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{item.text}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Session note</div>
-                <textarea value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="How did it feel? Any PRs?" style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 60, fontFamily: "inherit", marginBottom: 12 }} />
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => saveEdit(selectedKey, selectedLog)} style={{ flex: 1, background: "#4ade80", color: "#000", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Save Changes</button>
-                  <button onClick={() => setEditingKey(null)} style={{ flex: 1, background: "#1e1e2e", color: "#888", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
-                </div>
-              </div>
-            ) : (
-              /* ── VIEW MODE ── */
-              <div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, background: selectedLog.type === "hyrox" ? "#4ade8022" : selectedLog.type === "gym" ? "#fb923c22" : "#60a5fa22", color: selectedLog.type === "hyrox" ? "#4ade80" : selectedLog.type === "gym" ? "#fb923c" : "#60a5fa", padding: "4px 10px", borderRadius: 20, border: `1px solid ${selectedLog.type === "hyrox" ? "#4ade8044" : selectedLog.type === "gym" ? "#fb923c44" : "#60a5fa44"}` }}>
-                      {selectedLog.type === "hyrox" ? "🏋️ Hyrox" : selectedLog.type === "gym" ? "💪 Gym" : "🏃 Run"}
-                    </span>
-                    <span style={{ fontSize: 13, color: "#ccc", fontWeight: 700 }}>{selectedLog.label}</span>
-                  </div>
-                  {/* Edit / Delete buttons */}
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => startEdit(selectedKey, selectedLog)} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>✏️ Edit</button>
-                    <button onClick={() => handleDelete(selectedKey)} style={{ background: confirmDeleteKey === selectedKey ? "#f43f5e" : "#1e1e2e", border: "none", color: confirmDeleteKey === selectedKey ? "#fff" : "#f43f5e", borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700, transition: "all 0.2s" }}>
-                      {confirmDeleteKey === selectedKey ? "Confirm?" : "🗑 Delete"}
-                    </button>
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>{selectedLog.phaseName} · Logged at {selectedLog.time}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {selectedLog.items.map((item, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, color: item.checked ? "#555" : "#aaa", padding: "4px 0" }}>
-                      <span style={{ color: item.checked ? "#4ade80" : "#333", fontSize: 13, flexShrink: 0, marginTop: 1 }}>{item.checked ? "✓" : "○"}</span>
-                      <span style={{ textDecoration: item.checked ? "line-through" : "none", lineHeight: 1.4 }}>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-                {selectedLog.note && (
-                  <div style={{ marginTop: 10, fontSize: 12, color: "#666", fontStyle: "italic", padding: "8px 12px", background: "#0a0a0f", borderRadius: 8 }}>"{selectedLog.note}"</div>
-                )}
-              </div>
-            )
+          {selectedEntries.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#444", textAlign: "center", padding: "16px 0" }}>No workouts logged for this day</div>
           ) : (
-            <div style={{ fontSize: 13, color: "#444", textAlign: "center", padding: "20px 0" }}>No workout logged for this day</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {selectedEntries.map((entry, ei) => {
+                const tc = typeColor(entry.type);
+                const isEditing = isEditingEntry(selectedKey, entry.id);
+                const confirmKey = `${selectedKey}__${entry.id}`;
+                return (
+                  <div key={entry.id || ei} style={{ background: "#0a0a0f", border: `1px solid ${tc}33`, borderLeft: `3px solid ${tc}`, borderRadius: 10, padding: "12px 14px" }}>
+                    {isEditing ? (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>Editing — tap to toggle</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 12 }}>
+                          {entry.items.map((item, i) => {
+                            const isDone = !!editChecked[i];
+                            return (
+                              <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? tc + "11" : "transparent", border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left" }}>
+                                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${isDone ? tc : "#333"}`, background: isDone ? tc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                                  {isDone && <span style={{ color: "#000", fontSize: 10, fontWeight: 800 }}>✓</span>}
+                                </div>
+                                <span style={{ fontSize: 12, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>{item.text}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <textarea value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="Session note..." style={{ width: "100%", background: "#111118", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 50, fontFamily: "inherit", marginBottom: 8 }} />
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={() => saveEdit(selectedKey, entry)} style={{ flex: 1, background: tc, color: "#000", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Save</button>
+                          <button onClick={() => setEditingId(null)} style={{ flex: 1, background: "#1e1e2e", color: "#888", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                          <div>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: tc, background: tc + "18", padding: "3px 8px", borderRadius: 12, border: `1px solid ${tc}33` }}>{typeLabel(entry.type)}</span>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8f0", marginTop: 6 }}>{entry.label}</div>
+                            <div style={{ fontSize: 11, color: "#555", marginTop: 1 }}>{entry.phaseName} · {entry.time}</div>
+                          </div>
+                          <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                            <button onClick={() => startEdit(selectedKey, entry)} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+                            <button onClick={() => handleDelete(selectedKey, entry.id)} style={{ background: confirmDeleteId === confirmKey ? "#f43f5e22" : "#1e1e2e", border: `1px solid ${confirmDeleteId === confirmKey ? "#f43f5e" : "transparent"}`, color: confirmDeleteId === confirmKey ? "#f43f5e" : "#666", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
+                              {confirmDeleteId === confirmKey ? "Sure?" : "🗑"}
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          {entry.items.map((item, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 12, padding: "2px 0" }}>
+                              <span style={{ color: item.checked ? tc : "#333", fontSize: 12, flexShrink: 0, marginTop: 1 }}>{item.checked ? "✓" : "○"}</span>
+                              <span style={{ color: item.checked ? "#555" : "#888", textDecoration: item.checked ? "line-through" : "none", lineHeight: 1.4 }}>{item.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {entry.note && <div style={{ marginTop: 8, fontSize: 12, color: "#666", fontStyle: "italic", padding: "6px 10px", background: "#111118", borderRadius: 8 }}>"{entry.note}"</div>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
 
-      {/* RECENT LOG LIST */}
+      {/* ALL SESSIONS — newest first */}
       {totalLogs > 0 && (
         <div>
-          <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Recent Sessions</div>
+          <div style={{ fontSize: 11, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>All Sessions</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {Object.entries(workoutLogs).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10).map(([key, log]) => {
-              const [y, m, d] = key.split("-");
-              const typeColor = log.type === "hyrox" ? "#4ade80" : log.type === "gym" ? "#fb923c" : "#60a5fa";
-              const checkedCount = log.items.filter(i => i.checked).length;
-              const isEditing = editingKey === key;
-              return (
-                <div key={key} style={{ background: "#111118", border: `1px solid ${typeColor}22`, borderLeft: `3px solid ${typeColor}`, borderRadius: 10, padding: "12px 14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8f0" }}>{log.label}</div>
-                      <div style={{ fontSize: 11, color: typeColor, marginTop: 2 }}>{log.type === "hyrox" ? "🏋️ Hyrox" : log.type === "gym" ? "💪 Gym" : "🏃 Run"} · {log.phaseName}</div>
-                      {log.note && <div style={{ fontSize: 11, color: "#555", marginTop: 4, fontStyle: "italic" }}>"{log.note}"</div>}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                      <div style={{ fontSize: 11, color: "#555" }}>{d}/{m}/{y}</div>
-                      <div style={{ fontSize: 11, color: checkedCount === log.items.length ? "#4ade80" : "#facc15" }}>{checkedCount}/{log.items.length} done</div>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        <button onClick={() => { startEdit(key, log); setSelectedCalDay(null); }} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
-                        <button onClick={() => handleDelete(key)} style={{ background: confirmDeleteKey === key ? "#f43f5e22" : "#1e1e2e", border: `1px solid ${confirmDeleteKey === key ? "#f43f5e" : "transparent"}`, color: confirmDeleteKey === key ? "#f43f5e" : "#666", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700, transition: "all 0.2s" }}>
-                          {confirmDeleteKey === key ? "Sure?" : "🗑"}
-                        </button>
+            {allEntries
+              .sort((a, b) => b.dateKey.localeCompare(a.dateKey) || (b.id || "").localeCompare(a.id || ""))
+              .map((entry) => {
+                const tc = typeColor(entry.type);
+                const checkedCount = entry.items.filter(i => i.checked).length;
+                const isEditing = isEditingEntry(entry.dateKey, entry.id);
+                const confirmKey = `${entry.dateKey}__${entry.id}`;
+                const [y, m, d] = entry.dateKey.split("-");
+                return (
+                  <div key={`${entry.dateKey}-${entry.id}`} style={{ background: "#111118", border: `1px solid ${tc}22`, borderLeft: `3px solid ${tc}`, borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8f0" }}>{entry.label}</div>
+                        <div style={{ fontSize: 11, color: tc, marginTop: 2 }}>{typeLabel(entry.type)} · {entry.phaseName}</div>
+                        {entry.note && <div style={{ fontSize: 11, color: "#555", marginTop: 3, fontStyle: "italic" }}>"{entry.note}"</div>}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0 }}>
+                        <div style={{ fontSize: 11, color: "#555" }}>{d}/{m}/{y}</div>
+                        <div style={{ fontSize: 11, color: checkedCount === entry.items.length ? "#4ade80" : "#facc15" }}>{checkedCount}/{entry.items.length} done</div>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button onClick={() => startEdit(entry.dateKey, entry)} style={{ background: "#1e1e2e", border: "none", color: "#aaa", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+                          <button onClick={() => handleDelete(entry.dateKey, entry.id)} style={{ background: confirmDeleteId === confirmKey ? "#f43f5e22" : "#1e1e2e", border: `1px solid ${confirmDeleteId === confirmKey ? "#f43f5e" : "transparent"}`, color: confirmDeleteId === confirmKey ? "#f43f5e" : "#666", borderRadius: 6, padding: "4px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>
+                            {confirmDeleteId === confirmKey ? "Sure?" : "🗑"}
+                          </button>
+                        </div>
                       </div>
                     </div>
+                    {isEditing && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
+                        <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Tap to toggle · edit note below</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 10 }}>
+                          {entry.items.map((item, i) => {
+                            const isDone = !!editChecked[i];
+                            return (
+                              <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? tc + "11" : "transparent", border: "none", borderRadius: 6, padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
+                                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${isDone ? tc : "#333"}`, background: isDone ? tc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                  {isDone && <span style={{ color: "#000", fontSize: 10, fontWeight: 800 }}>✓</span>}
+                                </div>
+                                <span style={{ fontSize: 12, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none" }}>{item.text}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <textarea value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="Session note..." style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 50, fontFamily: "inherit", marginBottom: 8 }} />
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={() => saveEdit(entry.dateKey, entry)} style={{ flex: 1, background: tc, color: "#000", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Save</button>
+                          <button onClick={() => setEditingId(null)} style={{ flex: 1, background: "#1e1e2e", color: "#888", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {/* Inline edit panel for list items */}
-                  {isEditing && (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e2e" }}>
-                      <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Tap to toggle · edit note below</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 10 }}>
-                        {log.items.map((item, i) => {
-                          const isDone = !!editChecked[i];
-                          return (
-                            <button key={i} onClick={() => setEditChecked(prev => ({ ...prev, [i]: !prev[i] }))} style={{ width: "100%", background: isDone ? typeColor + "11" : "transparent", border: "none", borderRadius: 6, padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
-                              <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${isDone ? typeColor : "#333"}`, background: isDone ? typeColor : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
-                                {isDone && <span style={{ color: "#000", fontSize: 10, fontWeight: 800 }}>✓</span>}
-                              </div>
-                              <span style={{ fontSize: 12, color: isDone ? "#555" : "#aaa", textDecoration: isDone ? "line-through" : "none" }}>{item.text}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <textarea value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="Session note..." style={{ width: "100%", background: "#0a0a0f", border: "1px solid #2a2a3e", borderRadius: 8, padding: "8px 12px", color: "#aaa", fontSize: 12, resize: "none", height: 50, fontFamily: "inherit", marginBottom: 8 }} />
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => saveEdit(key, log)} style={{ flex: 1, background: typeColor, color: "#000", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Save</button>
-                        <button onClick={() => setEditingKey(null)} style={{ flex: 1, background: "#1e1e2e", color: "#888", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}
@@ -809,7 +840,7 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
         <div style={{ textAlign: "center", padding: "32px 0" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📓</div>
           <div style={{ fontSize: 14, color: "#444" }}>No workouts logged yet</div>
-          <div style={{ fontSize: 12, color: "#333", marginTop: 6 }}>Go to Hyrox or Running, expand a session, check off exercises, and hit Complete</div>
+          <div style={{ fontSize: 12, color: "#333", marginTop: 6 }}>Go to any tab, expand a session, check off exercises and hit Complete</div>
         </div>
       )}
     </div>
