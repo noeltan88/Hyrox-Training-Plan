@@ -757,11 +757,9 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
       </div>
 
       {/* EXPORT BUTTON */}
-      {totalLogs > 0 && (
-        <button onClick={exportPDF} style={{ width: "100%", background: "#111118", border: "1px solid #e879f944", borderRadius: 10, padding: "13px", color: "#e879f9", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          🖨️ Export Logs as PDF
-        </button>
-      )}
+      <button onClick={exportPDF} disabled={totalLogs === 0} style={{ width: "100%", background: "#111118", border: "1px solid #e879f944", borderRadius: 10, padding: "13px", color: totalLogs > 0 ? "#e879f9" : "#333", fontSize: 13, fontWeight: 700, cursor: totalLogs > 0 ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: totalLogs > 0 ? 1 : 0.4 }}>
+        🖨️ Export Logs as PDF {totalLogs > 0 ? `(${totalLogs} sessions)` : "(no logs yet)"}
+      </button>
 
       {/* CALENDAR */}
       <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16 }}>
