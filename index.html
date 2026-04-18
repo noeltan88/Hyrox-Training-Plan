@@ -672,6 +672,72 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
     return editingId && editingId.dateKey === dateKey && editingId.entryId === entryId;
   }
 
+  function exportPDF() {
+    const sorted = [...allEntries].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+    const rows = sorted.map(entry => {
+      const checkedCount = entry.items.filter(i => i.checked).length;
+      const tc = entry.type === "hyrox" ? "#4ade80" : entry.type === "gym" ? "#fb923c" : "#60a5fa";
+      const tl = entry.type === "hyrox" ? "Hyrox" : entry.type === "gym" ? "Gym" : "Run";
+      const itemLines = entry.items.map(item =>
+        `<div style="display:flex;align-items:flex-start;gap:8px;padding:3px 0">
+          <span style="color:${item.checked ? tc : "#555"};font-size:12px;flex-shrink:0">${item.checked ? "✓" : "○"}</span>
+          <span style="font-size:12px;color:${item.checked ? "#777" : "#bbb"};text-decoration:${item.checked ? "line-through" : "none"}">${item.text}</span>
+        </div>`
+      ).join("");
+      return `
+        <div style="margin-bottom:20px;border-left:3px solid ${tc};padding:10px 14px;background:#111118;border-radius:0 8px 8px 0;page-break-inside:avoid">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div>
+              <span style="font-size:10px;color:${tc};font-weight:700;text-transform:uppercase;letter-spacing:0.08em;background:${tc}22;padding:2px 8px;border-radius:10px">${tl}</span>
+              <div style="font-size:14px;font-weight:700;color:#fff;margin-top:5px">${entry.label}</div>
+              <div style="font-size:11px;color:#666;margin-top:1px">${entry.phaseName} · ${entry.time || ""}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:12px;color:#888">${entry.dateKey}</div>
+              <div style="font-size:11px;color:${checkedCount === entry.items.length ? "#4ade80" : "#facc15"};margin-top:2px">${checkedCount}/${entry.items.length} done</div>
+            </div>
+          </div>
+          <div style="margin-top:6px">${itemLines}</div>
+          ${entry.note ? `<div style="font-size:11px;color:#888;font-style:italic;margin-top:8px;padding:6px 10px;background:#0a0a0f;border-radius:6px">"${entry.note}"</div>` : ""}
+        </div>`;
+    }).join("");
+
+    const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hyrox Training Logs</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: -apple-system, Helvetica, sans-serif; background: #0a0a0f; color: #e8e8f0; padding: 24px; max-width: 700px; margin: 0 auto; }
+      h1 { color: #e879f9; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+      .meta { color: #555; font-size: 12px; margin-bottom: 20px; }
+      .stats { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+      .stat { background: #111118; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 70px; }
+      .stat-val { font-size: 20px; font-weight: 800; }
+      .stat-lbl { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+      .section-title { font-size: 11px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+      @media print {
+        body { background: #0a0a0f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @page { margin: 20mm; background: #0a0a0f; }
+      }
+    </style></head><body>
+    <h1>📓 Hyrox Training Logs</h1>
+    <div class="meta">Exported on ${todayKey()} · Noel Tan · Singapore</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-val" style="color:#e879f9">${totalLogs}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-val" style="color:#4ade80">${hyroxCount}</div><div class="stat-lbl">Hyrox</div></div>
+      <div class="stat"><div class="stat-val" style="color:#60a5fa">${runCount}</div><div class="stat-lbl">Runs</div></div>
+      <div class="stat"><div class="stat-val" style="color:#fb923c">${gymCount}</div><div class="stat-lbl">Gym</div></div>
+    </div>
+    <div class="section-title">All Sessions — Oldest to Newest</div>
+    ${rows}
+    </body></html>`;
+
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(printHTML);
+      win.document.close();
+      setTimeout(() => { win.print(); }, 600);
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -689,6 +755,13 @@ function LogTab({ workoutLogs, calMonth, setCalMonth, selectedCalDay, setSelecte
           </div>
         ))}
       </div>
+
+      {/* EXPORT BUTTON */}
+      {totalLogs > 0 && (
+        <button onClick={exportPDF} style={{ width: "100%", background: "#111118", border: "1px solid #e879f944", borderRadius: 10, padding: "13px", color: "#e879f9", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          🖨️ Export Logs as PDF
+        </button>
+      )}
 
       {/* CALENDAR */}
       <div style={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 12, padding: 16 }}>
